@@ -176,11 +176,11 @@
         <input type="text" name="longitude">
 
         <label for="userPassword">Password</label>
-        <input type="password" name="password" required minlength="12">
-        <span class="error" id="userPasswordError">Password must be at least 12 characters</span>
+        <input type="password" name="password" required minlength="8">
+        <span class="error" id="userPasswordError">Password must be at least 8 characters</span>
 
         <label for="userConfirmPassword">Confirm Password</label>
-        <input type="password" name="confirm_password" required>
+        <input type="password" name="confirm_password" required minlength="8">
         <span class="error" id="userConfirmPasswordError">Passwords do not match</span>
 
         <label for="userCountry">Country</label>
@@ -237,11 +237,11 @@
         <input type="text" name="longitude">
 
         <label for="adminPassword">Password</label>
-        <input type="password" name="password" required minlength="12">
-        <span class="error" id="adminPasswordError">Password must be at least 12 characters</span>
+        <input type="password" name="password" required minlength="8">
+        <span class="error" id="adminPasswordError">Password must be at least 8 characters</span>
 
         <label for="adminConfirmPassword">Confirm Password</label>
-        <input type="password" name="confirm_password" required>
+        <input type="password" name="confirm_password" required minlength="8">
         <span class="error" id="adminConfirmPasswordError">Passwords do not match</span>
 
         <button type="submit">Register</button>
@@ -266,8 +266,8 @@
         <span class="error" id="userLoginEmailError">Please enter a valid email</span>
 
         <label for="userLoginPassword">Password</label>
-        <input type="password" name="password" required minlength="12">
-        <span class="error" id="userLoginPasswordError">Password must be at least 12 characters</span>
+        <input type="password" name="password" required minlength="8">
+        <span class="error" id="userLoginPasswordError">Password must be at least 8 characters</span>
 
         <button type="submit">Login</button>
         <span class="error" id="userLoginError"></span>
@@ -281,8 +281,8 @@
         <span class="error" id="adminLoginEmailError">Please enter a valid email</span>
 
         <label for="adminLoginPassword">Password</label>
-        <input type="password" name="password" required minlength="12">
-        <span class="error" id="adminLoginPasswordError">Password must be at least 12 characters</span>
+        <input type="password" name="password" required minlength="8">
+        <span class="error" id="adminLoginPasswordError">Password must be at least 8 characters</span>
 
         <label for="adminLoginType">Admin Type</label>
         <select name="admin_type" required>
@@ -317,8 +317,8 @@
       <h3>Change Password</h3>
       <form id="userChangePasswordForm">
         <label for="userNewPassword">New Password</label>
-        <input type="password" name="newPassword" required minlength="12">
-        <span class="error" id="userChangePasswordError">Password must be at least 12 characters</span>
+        <input type="password" name="newPassword" required minlength="8">
+        <span class="error" id="userChangePasswordError">Password must be at least 8 characters</span>
         <button type="submit">Change Password</button>
         <span class="error" id="userChangePasswordResult"></span>
       </form>
@@ -348,8 +348,8 @@
       <h3>Change Password</h3>
       <form id="adminChangePasswordForm">
         <label for="adminNewPassword">New Password</label>
-        <input type="password" name="newPassword" required minlength="12">
-        <span class="error" id="adminChangePasswordError">Password must be at least 12 characters</span>
+        <input type="password" name="newPassword" required minlength="8">
+        <span class="error" id="adminChangePasswordError">Password must be at least 8 characters</span>
         <button type="submit">Change Password</button>
         <span class="error" id="adminChangePasswordResult"></span>
       </form>
@@ -454,17 +454,20 @@
       }
     }
 
-    // Load dropdowns
+    // Load dropdowns (fixed to populate options)
     async function loadDropdowns() {
       try {
         const [countriesRes, adminOptionsRes] = await Promise.all([
           fetch('/public/countries.json'),
           fetch('/public/adminOptions.json')
         ]);
+        if (!countriesRes.ok || !adminOptionsRes.ok) throw new Error('Failed to fetch JSON files');
         const countries = await countriesRes.json();
         const adminOptions = await adminOptionsRes.json();
 
+        // Populate country dropdowns
         document.querySelectorAll('select[name="country"]').forEach(select => {
+          select.innerHTML = '<option value="">Select Country</option>'; // Reset options
           countries.forEach(country => {
             const option = document.createElement('option');
             option.value = country;
@@ -473,21 +476,29 @@
           });
         });
 
+        // Populate admin type dropdown
         const adminTypeSelect = document.querySelector('select[name="admin_type"]');
-        adminOptions.types.forEach(type => {
-          const option = document.createElement('option');
-          option.value = type;
-          option.textContent = type;
-          adminTypeSelect.appendChild(option);
-        });
+        if (adminTypeSelect) {
+          adminTypeSelect.innerHTML = '<option value="">Select Type</option>'; // Reset options
+          adminOptions.types.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type;
+            option.textContent = type;
+            adminTypeSelect.appendChild(option);
+          });
+        }
 
+        // Populate thana dropdown
         const thanaSelect = document.querySelector('select[name="thana"]');
-        adminOptions.thanas.forEach(thana => {
-          const option = document.createElement('option');
-          option.value = thana;
-          option.textContent = thana;
-          thanaSelect.appendChild(option);
-        });
+        if (thanaSelect) {
+          thanaSelect.innerHTML = '<option value="">Select Thana</option>'; // Reset options
+          adminOptions.thanas.forEach(thana => {
+            const option = document.createElement('option');
+            option.value = thana;
+            option.textContent = thana;
+            thanaSelect.appendChild(option);
+          });
+        }
       } catch (err) {
         console.error('Error loading dropdowns:', err);
         document.getElementById('dropdownError').style.display = 'block';
