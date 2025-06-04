@@ -1,48 +1,11 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Registration and Login System</title>
+  <!-- Include SheetJS library for XLSX functionality -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     * {
       margin: 0;
@@ -177,9 +140,10 @@
 
       <form id="userRegisterForm" class="section" style="display: none;">
         <h3>User Registration</h3>
+        <button type="button" onclick="document.getElementById('geoModal').style.display='block'">Set Location Manually</button>
         <label for="userEmail">Email</label>
         <input type="email" name="email" required>
-        <span class="error">Please enter a valid email</span>
+        <span class="error" id="userEmailError">Please enter a valid email</span>
 
         <label for="userUsername">Username</label>
         <input type="text" name="username" required>
@@ -213,7 +177,7 @@
 
         <label for="userPassword">Password</label>
         <input type="password" name="password" required minlength="12">
-        <span class="error">Password must be at least 12 characters</span>
+        <span class="error" id="userPasswordError">Password must be at least 12 characters</span>
 
         <label for="userConfirmPassword">Confirm Password</label>
         <input type="password" name="confirm_password" required>
@@ -231,14 +195,16 @@
         <input type="text" name="emergency_contact_number_of_a_related_person">
 
         <button type="submit">Register</button>
+        <span class="error" id="userRegisterError"></span>
         <a href="#" onclick="showSection('loginSection')">Already registered? Login</a>
       </form>
 
       <form id="adminRegisterForm" class="section" style="display: none;">
         <h3>Admin Registration</h3>
+        <button type="button" onclick="document.getElementById('geoModal').style.display='block'">Set Location Manually</button>
         <label for="adminEmail">Email</label>
         <input type="email" name="email" required>
-        <span class="error">Please enter a valid email</span>
+        <span class="error" id="adminEmailError">Please enter a valid email</span>
 
         <label for="adminUsername">Username</label>
         <input type="text" name="username" required>
@@ -272,13 +238,14 @@
 
         <label for="adminPassword">Password</label>
         <input type="password" name="password" required minlength="12">
-        <span class="error">Password must be at least 12 characters</span>
+        <span class="error" id="adminPasswordError">Password must be at least 12 characters</span>
 
         <label for="adminConfirmPassword">Confirm Password</label>
         <input type="password" name="confirm_password" required>
         <span class="error" id="adminConfirmPasswordError">Passwords do not match</span>
 
         <button type="submit">Register</button>
+        <span class="error" id="adminRegisterError"></span>
         <a href="#" onclick="showSection('loginSection')">Already registered? Login</a>
       </form>
     </div>
@@ -296,13 +263,14 @@
         <h3>User Login</h3>
         <label for="userLoginEmail">Email</label>
         <input type="email" name="email" required>
-        <span class="error">Please enter a valid email</span>
+        <span class="error" id="userLoginEmailError">Please enter a valid email</span>
 
         <label for="userLoginPassword">Password</label>
         <input type="password" name="password" required minlength="12">
-        <span class="error">Password must be at least 12 characters</span>
+        <span class="error" id="userLoginPasswordError">Password must be at least 12 characters</span>
 
         <button type="submit">Login</button>
+        <span class="error" id="userLoginError"></span>
         <a href="#" onclick="showSection('registerSection')">Not registered? Register</a>
       </form>
 
@@ -310,11 +278,11 @@
         <h3>Admin Login</h3>
         <label for="adminLoginEmail">Email</label>
         <input type="email" name="email" required>
-        <span class="error">Please enter a valid email</span>
+        <span class="error" id="adminLoginEmailError">Please enter a valid email</span>
 
         <label for="adminLoginPassword">Password</label>
         <input type="password" name="password" required minlength="12">
-        <span class="error">Password must be at least 12 characters</span>
+        <span class="error" id="adminLoginPasswordError">Password must be at least 12 characters</span>
 
         <label for="adminLoginType">Admin Type</label>
         <select name="admin_type" required>
@@ -322,6 +290,7 @@
         </select>
 
         <button type="submit">Login</button>
+        <span class="error" id="adminLoginError"></span>
         <a href="#" onclick="showSection('registerSection')">Not registered? Register</a>
       </form>
     </div>
@@ -349,14 +318,16 @@
       <form id="userChangePasswordForm">
         <label for="userNewPassword">New Password</label>
         <input type="password" name="newPassword" required minlength="12">
-        <span class="error">Password must be at least 12 characters</span>
+        <span class="error" id="userChangePasswordError">Password must be at least 12 characters</span>
         <button type="submit">Change Password</button>
+        <span class="error" id="userChangePasswordResult"></span>
       </form>
 
       <h3>Upload Profile Image</h3>
       <form id="userUploadImageForm" enctype="multipart/form-data">
         <input type="file" name="image" accept="image/*">
         <button type="submit">Upload Image</button>
+        <span class="error" id="userUploadImageError"></span>
       </form>
     </div>
 
@@ -378,18 +349,20 @@
       <form id="adminChangePasswordForm">
         <label for="adminNewPassword">New Password</label>
         <input type="password" name="newPassword" required minlength="12">
-        <span class="error">Password must be at least 12 characters</span>
+        <span class="error" id="adminChangePasswordError">Password must be at least 12 characters</span>
         <button type="submit">Change Password</button>
+        <span class="error" id="adminChangePasswordResult"></span>
       </form>
 
       <h3>Upload Profile Image</h3>
       <form id="adminUploadImageForm" enctype="multipart/form-data">
         <input type="file" name="image" accept="image/*">
         <button type="submit">Upload Image</button>
+        <span class="error" id="adminUploadImageError"></span>
       </form>
     </div>
 
-    <footer>© 2025 Your App Name. All rights reserved.</footer>
+    <footer>© 2025 RegistrationSystem. All rights reserved.</footer>
   </div>
 
   <div id="geoModal" class="section" style="display: none;">
@@ -398,9 +371,50 @@
     <button onclick="denyGeo()">Deny</button>
   </div>
 
+  <script type="text/javascript">
+    var gk_isXlsx = false;
+    var gk_xlsxFileLookup = {};
+    var gk_fileData = {};
+    function filledCell(cell) {
+      return cell !== '' && cell != null;
+    }
+    function loadFileData(filename) {
+      if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+        try {
+          var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+          var firstSheetName = workbook.SheetNames[0];
+          var worksheet = workbook.Sheets[firstSheetName];
+
+          // Convert sheet to JSON to filter blank rows
+          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+          // Filter out blank rows (rows where all cells are empty, null, or undefined)
+          var filteredData = jsonData.filter(row => row.some(filledCell));
+
+          // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+          var headerRowIndex = filteredData.findIndex((row, index) =>
+            row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+          );
+          // Fallback
+          if (headerRowIndex === -1 || headerRowIndex > 25) {
+            headerRowIndex = 0;
+          }
+
+          // Convert filtered JSON back to CSV
+          var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+          csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+          return csv;
+        } catch (e) {
+          console.error(e);
+          return "";
+        }
+      }
+      return gk_fileData[filename] || "";
+    }
+  </script>
+
   <script>
-    // Set your backend URL (replace with your Render URL)
-    const backendUrl = 'https://fedup-1buq.onrender.com'; // Update this
+    // Set your backend URL
+    const backendUrl = 'https://fedup-1bug.onrender.com';
 
     // Show/hide sections
     function showSection(sectionId) {
@@ -423,12 +437,21 @@
       document.getElementById('adminRegisterForm').style.display = type === 'admin' ? 'block' : 'none';
     }
 
-    // Toggle login forms
+    // Toggle login forms (fixed with debug logging)
     function toggleLoginForm() {
+      console.log('toggleLoginForm called with value:', document.getElementById('loginType').value); // Debug log
       const type = document.getElementById('loginType').value;
-      document.getElementById('userLoginForm').style.display = type === 'user' ? 'block' : 'none';
-      document.getElementById('adminLoginForm').style.display = type === 'admin' ? 'block' : 'none';
-      document.getElementById('loginTypeError').style.display = type === '' ? 'block' : 'none';
+      const userForm = document.getElementById('userLoginForm');
+      const adminForm = document.getElementById('adminLoginForm');
+      const errorMsg = document.getElementById('loginTypeError');
+
+      if (userForm && adminForm && errorMsg) {
+        userForm.style.display = type === 'user' ? 'block' : 'none';
+        adminForm.style.display = type === 'admin' ? 'block' : 'none';
+        errorMsg.style.display = type === '' ? 'block' : 'none';
+      } else {
+        console.error('One or more elements not found:', { userForm, adminForm, errorMsg });
+      }
     }
 
     // Load dropdowns
@@ -476,15 +499,18 @@
       e.preventDefault();
       const formData = new FormData(e.target);
       const data = Object.fromEntries(formData);
+      const errorElement = document.getElementById('userRegisterError');
 
       if (!data.email || !data.password || !data.username || !data.first_name || !data.last_name || !data.country) {
-        alert('Please fill in all required fields.');
+        errorElement.textContent = 'Please fill in all required fields.';
+        errorElement.style.display = 'block';
         return;
       }
 
       if (data.password !== data.confirm_password) {
         document.getElementById('userConfirmPasswordError').style.display = 'block';
-        alert('Passwords do not match.');
+        errorElement.textContent = 'Passwords do not match.';
+        errorElement.style.display = 'block';
         return;
       } else {
         document.getElementById('userConfirmPasswordError').style.display = 'none';
@@ -498,15 +524,19 @@
         });
         const result = await response.text();
         if (response.ok) {
-          alert(result);
+          errorElement.textContent = result;
+          errorElement.style.color = 'green';
+          errorElement.style.display = 'block';
           e.target.reset();
           showSection('loginSection');
         } else {
-          alert(result || 'Error registering user');
+          errorElement.textContent = result || 'Error registering user';
+          errorElement.style.display = 'block';
         }
       } catch (err) {
         console.error('Error:', err);
-        alert('Failed to connect to the server. Please try again.');
+        errorElement.textContent = 'Failed to connect to the server. Please try again.';
+        errorElement.style.display = 'block';
       }
     });
 
@@ -515,15 +545,18 @@
       e.preventDefault();
       const formData = new FormData(e.target);
       const data = Object.fromEntries(formData);
+      const errorElement = document.getElementById('adminRegisterError');
 
       if (!data.email || !data.password || !data.username || !data.admin_type || !data.country || !data.thana) {
-        alert('Please fill in all required fields.');
+        errorElement.textContent = 'Please fill in all required fields.';
+        errorElement.style.display = 'block';
         return;
       }
 
       if (data.password !== data.confirm_password) {
         document.getElementById('adminConfirmPasswordError').style.display = 'block';
-        alert('Passwords do not match.');
+        errorElement.textContent = 'Passwords do not match.';
+        errorElement.style.display = 'block';
         return;
       } else {
         document.getElementById('adminConfirmPasswordError').style.display = 'none';
@@ -537,15 +570,19 @@
         });
         const result = await response.text();
         if (response.ok) {
-          alert(result);
+          errorElement.textContent = result;
+          errorElement.style.color = 'green';
+          errorElement.style.display = 'block';
           e.target.reset();
           showSection('loginSection');
         } else {
-          alert(result || 'Error registering admin');
+          errorElement.textContent = result || 'Error registering admin';
+          errorElement.style.display = 'block';
         }
       } catch (err) {
         console.error('Error:', err);
-        alert('Failed to connect to the server. Please try again.');
+        errorElement.textContent = 'Failed to connect to the server. Please try again.';
+        errorElement.style.display = 'block';
       }
     });
 
@@ -554,6 +591,7 @@
       e.preventDefault();
       const formData = new FormData(e.target);
       const data = Object.fromEntries(formData);
+      const errorElement = document.getElementById('userLoginError');
 
       try {
         const response = await fetch(`${backendUrl}/login-user`, {
@@ -563,15 +601,19 @@
         });
         const result = await response.text();
         if (response.ok) {
-          alert(result);
+          errorElement.textContent = result;
+          errorElement.style.color = 'green';
+          errorElement.style.display = 'block';
           fetchUserData(data.email);
           showSection('userPanel');
         } else {
-          alert(result || 'Error logging in');
+          errorElement.textContent = result || 'Error logging in';
+          errorElement.style.display = 'block';
         }
       } catch (err) {
         console.error('Error:', err);
-        alert('Failed to connect to the server. Please try again.');
+        errorElement.textContent = 'Failed to connect to the server. Please try again.';
+        errorElement.style.display = 'block';
       }
     });
 
@@ -580,6 +622,7 @@
       e.preventDefault();
       const formData = new FormData(e.target);
       const data = Object.fromEntries(formData);
+      const errorElement = document.getElementById('adminLoginError');
 
       try {
         const response = await fetch(`${backendUrl}/login-admin`, {
@@ -589,15 +632,19 @@
         });
         const result = await response.text();
         if (response.ok) {
-          alert(result);
+          errorElement.textContent = result;
+          errorElement.style.color = 'green';
+          errorElement.style.display = 'block';
           fetchAdminData(data.email, data.admin_type);
           showSection('adminPanel');
         } else {
-          alert(result || 'Error logging in');
+          errorElement.textContent = result || 'Error logging in';
+          errorElement.style.display = 'block';
         }
       } catch (err) {
         console.error('Error:', err);
-        alert('Failed to connect to the server. Please try again.');
+        errorElement.textContent = 'Failed to connect to the server. Please try again.';
+        errorElement.style.display = 'block';
       }
     });
 
@@ -626,11 +673,13 @@
           document.getElementById('userLatitudeDisplay').textContent = user.latitude || '';
           document.getElementById('userLongitudeDisplay').textContent = user.longitude || '';
         } else {
-          alert('User not found');
+          document.getElementById('userLoginError').textContent = 'User not found';
+          document.getElementById('userLoginError').style.display = 'block';
         }
       } catch (err) {
         console.error('Error:', err);
-        alert('Failed to fetch user data.');
+        document.getElementById('userLoginError').textContent = 'Failed to fetch user data.';
+        document.getElementById('userLoginError').style.display = 'block';
       }
     }
 
@@ -654,11 +703,13 @@
           document.getElementById('adminLatitudeDisplay').textContent = admin.latitude || '';
           document.getElementById('adminLongitudeDisplay').textContent = admin.longitude || '';
         } else {
-          alert('Admin not found');
+          document.getElementById('adminLoginError').textContent = 'Admin not found';
+          document.getElementById('adminLoginError').style.display = 'block';
         }
       } catch (err) {
         console.error('Error:', err);
-        alert('Failed to fetch admin data.');
+        document.getElementById('adminLoginError').textContent = 'Failed to fetch admin data.';
+        document.getElementById('adminLoginError').style.display = 'block';
       }
     }
 
@@ -667,6 +718,7 @@
       e.preventDefault();
       const formData = new FormData(e.target);
       const data = Object.fromEntries(formData);
+      const errorElement = document.getElementById('userChangePasswordResult');
       try {
         const response = await fetch(`${backendUrl}/change-password-user`, {
           method: 'POST',
@@ -674,11 +726,14 @@
           body: JSON.stringify({ email: document.getElementById('userEmailDisplay').textContent, newPassword: data.newPassword })
         });
         const result = await response.text();
-        alert(result);
+        errorElement.textContent = result;
+        errorElement.style.color = response.ok ? 'green' : '#d93025';
+        errorElement.style.display = 'block';
         if (response.ok) e.target.reset();
       } catch (err) {
         console.error('Error:', err);
-        alert('Failed to change password.');
+        errorElement.textContent = 'Failed to change password.';
+        errorElement.style.display = 'block';
       }
     });
 
@@ -687,6 +742,7 @@
       e.preventDefault();
       const formData = new FormData(e.target);
       const data = Object.fromEntries(formData);
+      const errorElement = document.getElementById('adminChangePasswordResult');
       try {
         const response = await fetch(`${backendUrl}/change-password-admin`, {
           method: 'POST',
@@ -698,11 +754,14 @@
           })
         });
         const result = await response.text();
-        alert(result);
+        errorElement.textContent = result;
+        errorElement.style.color = response.ok ? 'green' : '#d93025';
+        errorElement.style.display = 'block';
         if (response.ok) e.target.reset();
       } catch (err) {
         console.error('Error:', err);
-        alert('Failed to change password.');
+        errorElement.textContent = 'Failed to change password.';
+        errorElement.style.display = 'block';
       }
     });
 
@@ -711,17 +770,21 @@
       e.preventDefault();
       const formData = new FormData(e.target);
       formData.append('email', document.getElementById('userEmailDisplay').textContent);
+      const errorElement = document.getElementById('userUploadImageError');
       try {
         const response = await fetch(`${backendUrl}/upload-image-user`, {
           method: 'POST',
           body: formData
         });
         const result = await response.text();
-        alert(result);
+        errorElement.textContent = result;
+        errorElement.style.color = response.ok ? 'green' : '#d93025';
+        errorElement.style.display = 'block';
         if (response.ok) e.target.reset();
       } catch (err) {
         console.error('Error:', err);
-        alert('Failed to upload image.');
+        errorElement.textContent = 'Failed to upload image.';
+        errorElement.style.display = 'block';
       }
     });
 
@@ -731,17 +794,21 @@
       const formData = new FormData(e.target);
       formData.append('email', document.getElementById('adminEmailDisplay').textContent);
       formData.append('admin_type', document.getElementById('adminTypeDisplay').textContent);
+      const errorElement = document.getElementById('adminUploadImageError');
       try {
         const response = await fetch(`${backendUrl}/upload-image-admin`, {
           method: 'POST',
           body: formData
         });
         const result = await response.text();
-        alert(result);
+        errorElement.textContent = result;
+        errorElement.style.color = response.ok ? 'green' : '#d93025';
+        errorElement.style.display = 'block';
         if (response.ok) e.target.reset();
       } catch (err) {
         console.error('Error:', err);
-        alert('Failed to upload image.');
+        errorElement.textContent = 'Failed to upload image.';
+        errorElement.style.display = 'block';
       }
     });
 
@@ -753,12 +820,16 @@
           document.querySelectorAll('input[name="longitude"]').forEach(input => input.value = position.coords.longitude);
           document.getElementById('geoModal').style.display = 'none';
         }, () => {
-          alert('Geolocation access denied.');
           document.getElementById('geoModal').style.display = 'none';
+          const errorElement = document.querySelector('#registerSection .error');
+          errorElement.textContent = 'Geolocation access denied.';
+          errorElement.style.display = 'block';
         });
       } else {
-        alert('Geolocation is not supported by this browser.');
         document.getElementById('geoModal').style.display = 'none';
+        const errorElement = document.querySelector('#registerSection .error');
+        errorElement.textContent = 'Geolocation is not supported by this browser.';
+        errorElement.style.display = 'block';
       }
     }
 
@@ -769,8 +840,8 @@
     // Initialize
     window.onload = () => {
       loadDropdowns();
-      // Show login section by default, no geolocation modal
       showSection('loginSection');
+      toggleLoginForm(); // Ensure login form state is set on load
     };
   </script>
 </body>
