@@ -1,0 +1,777 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registration and Login System</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+      background-color: #f0f2f5;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 500px;
+      width: 100%;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 32px;
+      margin: 20px auto;
+    }
+    h2 {
+      font-size: 28px;
+      font-weight: 400;
+      text-align: center;
+      margin-bottom: 24px;
+      color: #1a73e8;
+    }
+    h3 {
+      font-size: 20px;
+      font-weight: 400;
+      margin: 20px 0 16px;
+      color: #333;
+    }
+    .section {
+      display: none;
+    }
+    .section.active {
+      display: block;
+    }
+    select, input, button {
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+      font-size: 16px;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid #dadce0;
+      border-radius: 8px;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    select:focus, input:focus {
+      border-color: #1a73e8;
+      box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+    }
+    button {
+      background-color: #1a73e8;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-weight: 400;
+      padding: 12px;
+      border-radius: 8px;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #1557b0;
+    }
+    .error {
+      color: #d93025;
+      font-size: 14px;
+      display: none;
+      margin-top: -12px;
+      margin-bottom: 12px;
+    }
+    a {
+      color: #1a73e8;
+      text-decoration: none;
+      font-size: 14px;
+      display: block;
+      text-align: center;
+      margin-top: 12px;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    footer {
+      text-align: center;
+      font-size: 14px;
+      color: #666;
+      margin-top: 24px;
+    }
+    #geoModal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      z-index: 1000;
+    }
+    #geoModal button {
+      margin: 10px;
+    }
+    @media (max-width: 600px) {
+      .container {
+        padding: 24px;
+      }
+      h2 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="registerSection" class="section">
+      <h2>Register</h2>
+      <select id="registerType" onchange="toggleRegisterForm()">
+        <option value="">-- Select --</option>
+        <option value="user">User Registration</option>
+        <option value="admin">Admin Registration</option>
+      </select>
+      <p id="dropdownError" class="error">Failed to load dropdown data. Please try again.</p>
+
+      <form id="userRegisterForm" class="section" style="display: none;">
+        <h3>User Registration</h3>
+        <label for="userEmail">Email</label>
+        <input type="email" name="email" required>
+        <span class="error">Please enter a valid email</span>
+
+        <label for="userUsername">Username</label>
+        <input type="text" name="username" required>
+
+        <label for="userFirstName">First Name</label>
+        <input type="text" name="first_name" required>
+
+        <label for="userLastName">Last Name</label>
+        <input type="text" name="last_name" required>
+
+        <label for="userDrivingLicense">Driving License</label>
+        <input type="text" name="driving_license">
+
+        <label for="userNationalId">National ID</label>
+        <input type="text" name="national_id">
+
+        <label for="userNumberPlate">Number Plate</label>
+        <input type="text" name="number_plate">
+
+        <label for="userAddress">Address</label>
+        <input type="text" name="address">
+
+        <label for="userLocation">Location</label>
+        <input type="text" name="location">
+
+        <label for="userLatitude">Latitude</label>
+        <input type="text" name="latitude">
+
+        <label for="userLongitude">Longitude</label>
+        <input type="text" name="longitude">
+
+        <label for="userPassword">Password</label>
+        <input type="password" name="password" required minlength="12">
+        <span class="error">Password must be at least 12 characters</span>
+
+        <label for="userConfirmPassword">Confirm Password</label>
+        <input type="password" name="confirm_password" required>
+        <span class="error" id="userConfirmPasswordError">Passwords do not match</span>
+
+        <label for="userCountry">Country</label>
+        <select name="country" required>
+          <option value="">Select Country</option>
+        </select>
+
+        <label for="userEmergencyContact">Emergency Contact</label>
+        <input type="text" name="emergency_contact_number">
+
+        <label for="userRelatedEmergencyContact">Related Emergency Contact</label>
+        <input type="text" name="emergency_contact_number_of_a_related_person">
+
+        <button type="submit">Register</button>
+        <a href="#" onclick="showSection('loginSection')">Already registered? Login</a>
+      </form>
+
+      <form id="adminRegisterForm" class="section" style="display: none;">
+        <h3>Admin Registration</h3>
+        <label for="adminEmail">Email</label>
+        <input type="email" name="email" required>
+        <span class="error">Please enter a valid email</span>
+
+        <label for="adminUsername">Username</label>
+        <input type="text" name="username" required>
+
+        <label for="adminType">Admin Type</label>
+        <select name="admin_type" required>
+          <option value="">Select Type</option>
+        </select>
+
+        <label for="adminCountry">Country</label>
+        <select name="country" required>
+          <option value="">Select Country</option>
+        </select>
+
+        <label for="adminThana">Thana</label>
+        <select name="thana" required>
+          <option value="">Select Thana</option>
+        </select>
+
+        <label for="adminEmergencyResponse">Emergency Response</label>
+        <input type="text" name="emergency_response">
+
+        <label for="adminServiceInfo">Service Info</label>
+        <input type="text" name="service_info">
+
+        <label for="adminLatitude">Latitude</label>
+        <input type="text" name="latitude">
+
+        <label for="adminLongitude">Longitude</label>
+        <input type="text" name="longitude">
+
+        <label for="adminPassword">Password</label>
+        <input type="password" name="password" required minlength="12">
+        <span class="error">Password must be at least 12 characters</span>
+
+        <label for="adminConfirmPassword">Confirm Password</label>
+        <input type="password" name="confirm_password" required>
+        <span class="error" id="adminConfirmPasswordError">Passwords do not match</span>
+
+        <button type="submit">Register</button>
+        <a href="#" onclick="showSection('loginSection')">Already registered? Login</a>
+      </form>
+    </div>
+
+    <div id="loginSection" class="section active">
+      <h2>Login</h2>
+      <select id="loginType" onchange="toggleLoginForm()">
+        <option value="">-- Select --</option>
+        <option value="user">User Login</option>
+        <option value="admin">Admin Login</option>
+      </select>
+      <p id="loginTypeError" class="error">Please select a login type.</p>
+
+      <form id="userLoginForm" class="section" style="display: none;">
+        <h3>User Login</h3>
+        <label for="userLoginEmail">Email</label>
+        <input type="email" name="email" required>
+        <span class="error">Please enter a valid email</span>
+
+        <label for="userLoginPassword">Password</label>
+        <input type="password" name="password" required minlength="12">
+        <span class="error">Password must be at least 12 characters</span>
+
+        <button type="submit">Login</button>
+        <a href="#" onclick="showSection('registerSection')">Not registered? Register</a>
+      </form>
+
+      <form id="adminLoginForm" class="section" style="display: none;">
+        <h3>Admin Login</h3>
+        <label for="adminLoginEmail">Email</label>
+        <input type="email" name="email" required>
+        <span class="error">Please enter a valid email</span>
+
+        <label for="adminLoginPassword">Password</label>
+        <input type="password" name="password" required minlength="12">
+        <span class="error">Password must be at least 12 characters</span>
+
+        <label for="adminLoginType">Admin Type</label>
+        <select name="admin_type" required>
+          <option value="">Select Admin Type</option>
+        </select>
+
+        <button type="submit">Login</button>
+        <a href="#" onclick="showSection('registerSection')">Not registered? Register</a>
+      </form>
+    </div>
+
+    <div id="userPanel" class="section">
+      <h2>User Panel</h2>
+      <div id="userData">
+        <p><strong>Email:</strong> <span id="userEmailDisplay"></span></p>
+        <p><strong>Username:</strong> <span id="userUsernameDisplay"></span></p>
+        <p><strong>First Name:</strong> <span id="userFirstNameDisplay"></span></p>
+        <p><strong>Last Name:</strong> <span id="userLastNameDisplay"></span></p>
+        <p><strong>Driving License:</strong> <span id="userDrivingLicenseDisplay"></span></p>
+        <p><strong>National ID:</strong> <span id="userNationalIdDisplay"></span></p>
+        <p><strong>Number Plate:</strong> <span id="userNumberPlateDisplay"></span></p>
+        <p><strong>Address:</strong> <span id="userAddressDisplay"></span></p>
+        <p><strong>Location:</strong> <span id="userLocationDisplay"></span></p>
+        <p><strong>Country:</strong> <span id="userCountryDisplay"></span></p>
+        <p><strong>Emergency Contact:</strong> <span id="userEmergencyContactDisplay"></span></p>
+        <p><strong>Related Emergency Contact:</strong> <span id="userRelatedEmergencyContactDisplay"></span></p>
+        <p><strong>Latitude:</strong> <span id="userLatitudeDisplay"></span></p>
+        <p><strong>Longitude:</strong> <span id="userLongitudeDisplay"></span></p>
+      </div>
+
+      <h3>Change Password</h3>
+      <form id="userChangePasswordForm">
+        <label for="userNewPassword">New Password</label>
+        <input type="password" name="newPassword" required minlength="12">
+        <span class="error">Password must be at least 12 characters</span>
+        <button type="submit">Change Password</button>
+      </form>
+
+      <h3>Upload Profile Image</h3>
+      <form id="userUploadImageForm" enctype="multipart/form-data">
+        <input type="file" name="image" accept="image/*">
+        <button type="submit">Upload Image</button>
+      </form>
+    </div>
+
+    <div id="adminPanel" class="section">
+      <h2>Admin Panel</h2>
+      <div id="adminData">
+        <p><strong>Email:</strong> <span id="adminEmailDisplay"></span></p>
+        <p><strong>Username:</strong> <span id="adminUsernameDisplay"></span></p>
+        <p><strong>Admin Type:</strong> <span id="adminTypeDisplay"></span></p>
+        <p><strong>Country:</strong> <span id="adminCountryDisplay"></span></p>
+        <p><strong>Thana:</strong> <span id="adminThanaDisplay"></span></p>
+        <p><strong>Emergency Response:</strong> <span id="adminEmergencyResponseDisplay"></span></p>
+        <p><strong>Service Info:</strong> <span id="adminServiceInfoDisplay"></span></p>
+        <p><strong>Latitude:</strong> <span id="adminLatitudeDisplay"></span></p>
+        <p><strong>Longitude:</strong> <span id="adminLongitudeDisplay"></span></p>
+      </div>
+
+      <h3>Change Password</h3>
+      <form id="adminChangePasswordForm">
+        <label for="adminNewPassword">New Password</label>
+        <input type="password" name="newPassword" required minlength="12">
+        <span class="error">Password must be at least 12 characters</span>
+        <button type="submit">Change Password</button>
+      </form>
+
+      <h3>Upload Profile Image</h3>
+      <form id="adminUploadImageForm" enctype="multipart/form-data">
+        <input type="file" name="image" accept="image/*">
+        <button type="submit">Upload Image</button>
+      </form>
+    </div>
+
+    <footer>© 2025 Your App Name. All rights reserved.</footer>
+  </div>
+
+  <div id="geoModal" class="section" style="display: none;">
+    <p>Allow us to access your location to auto-fill latitude and longitude?</p>
+    <button onclick="allowGeo()">Allow</button>
+    <button onclick="denyGeo()">Deny</button>
+  </div>
+
+  <script>
+    // Set your backend URL (replace with your Render URL)
+    const backendUrl = 'https://your-backend-url.onrender.com'; // Update this
+
+    // Show/hide sections
+    function showSection(sectionId) {
+      document.querySelectorAll('.section').forEach(section => {
+        section.classList.remove('active');
+      });
+      document.getElementById(sectionId).classList.add('active');
+      // Show geolocation modal only when on registration section
+      if (sectionId === 'registerSection' && navigator.geolocation) {
+        document.getElementById('geoModal').style.display = 'block';
+      } else {
+        document.getElementById('geoModal').style.display = 'none';
+      }
+    }
+
+    // Toggle registration forms
+    function toggleRegisterForm() {
+      const type = document.getElementById('registerType').value;
+      document.getElementById('userRegisterForm').style.display = type === 'user' ? 'block' : 'none';
+      document.getElementById('adminRegisterForm').style.display = type === 'admin' ? 'block' : 'none';
+    }
+
+    // Toggle login forms
+    function toggleLoginForm() {
+      const type = document.getElementById('loginType').value;
+      document.getElementById('userLoginForm').style.display = type === 'user' ? 'block' : 'none';
+      document.getElementById('adminLoginForm').style.display = type === 'admin' ? 'block' : 'none';
+      document.getElementById('loginTypeError').style.display = type === '' ? 'block' : 'none';
+    }
+
+    // Load dropdowns
+    async function loadDropdowns() {
+      try {
+        const [countriesRes, adminOptionsRes] = await Promise.all([
+          fetch('/public/countries.json'),
+          fetch('/public/adminOptions.json')
+        ]);
+        const countries = await countriesRes.json();
+        const adminOptions = await adminOptionsRes.json();
+
+        document.querySelectorAll('select[name="country"]').forEach(select => {
+          countries.forEach(country => {
+            const option = document.createElement('option');
+            option.value = country;
+            option.textContent = country;
+            select.appendChild(option);
+          });
+        });
+
+        const adminTypeSelect = document.querySelector('select[name="admin_type"]');
+        adminOptions.types.forEach(type => {
+          const option = document.createElement('option');
+          option.value = type;
+          option.textContent = type;
+          adminTypeSelect.appendChild(option);
+        });
+
+        const thanaSelect = document.querySelector('select[name="thana"]');
+        adminOptions.thanas.forEach(thana => {
+          const option = document.createElement('option');
+          option.value = thana;
+          option.textContent = thana;
+          thanaSelect.appendChild(option);
+        });
+      } catch (err) {
+        console.error('Error loading dropdowns:', err);
+        document.getElementById('dropdownError').style.display = 'block';
+      }
+    }
+
+    // Handle User Registration
+    document.getElementById('userRegisterForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData);
+
+      if (!data.email || !data.password || !data.username || !data.first_name || !data.last_name || !data.country) {
+        alert('Please fill in all required fields.');
+        return;
+      }
+
+      if (data.password !== data.confirm_password) {
+        document.getElementById('userConfirmPasswordError').style.display = 'block';
+        alert('Passwords do not match.');
+        return;
+      } else {
+        document.getElementById('userConfirmPasswordError').style.display = 'none';
+      }
+
+      try {
+        const response = await fetch(`${backendUrl}/register-user`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...data, confirm_password: undefined })
+        });
+        const result = await response.text();
+        if (response.ok) {
+          alert(result);
+          e.target.reset();
+          showSection('loginSection');
+        } else {
+          alert(result || 'Error registering user');
+        }
+      } catch (err) {
+        console.error('Error:', err);
+        alert('Failed to connect to the server. Please try again.');
+      }
+    });
+
+    // Handle Admin Registration
+    document.getElementById('adminRegisterForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData);
+
+      if (!data.email || !data.password || !data.username || !data.admin_type || !data.country || !data.thana) {
+        alert('Please fill in all required fields.');
+        return;
+      }
+
+      if (data.password !== data.confirm_password) {
+        document.getElementById('adminConfirmPasswordError').style.display = 'block';
+        alert('Passwords do not match.');
+        return;
+      } else {
+        document.getElementById('adminConfirmPasswordError').style.display = 'none';
+      }
+
+      try {
+        const response = await fetch(`${backendUrl}/register-admin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...data, confirm_password: undefined })
+        });
+        const result = await response.text();
+        if (response.ok) {
+          alert(result);
+          e.target.reset();
+          showSection('loginSection');
+        } else {
+          alert(result || 'Error registering admin');
+        }
+      } catch (err) {
+        console.error('Error:', err);
+        alert('Failed to connect to the server. Please try again.');
+      }
+    });
+
+    // Handle User Login
+    document.getElementById('userLoginForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData);
+
+      try {
+        const response = await fetch(`${backendUrl}/login-user`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await response.text();
+        if (response.ok) {
+          alert(result);
+          fetchUserData(data.email);
+          showSection('userPanel');
+        } else {
+          alert(result || 'Error logging in');
+        }
+      } catch (err) {
+        console.error('Error:', err);
+        alert('Failed to connect to the server. Please try again.');
+      }
+    });
+
+    // Handle Admin Login
+    document.getElementById('adminLoginForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData);
+
+      try {
+        const response = await fetch(`${backendUrl}/login-admin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await response.text();
+        if (response.ok) {
+          alert(result);
+          fetchAdminData(data.email, data.admin_type);
+          showSection('adminPanel');
+        } else {
+          alert(result || 'Error logging in');
+        }
+      } catch (err) {
+        console.error('Error:', err);
+        alert('Failed to connect to the server. Please try again.');
+      }
+    });
+
+    // Fetch User Data
+    async function fetchUserData(email) {
+      try {
+        const response = await fetch(`${backendUrl}/user-data`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const user = await response.json();
+        if (response.ok) {
+          document.getElementById('userEmailDisplay').textContent = user.email || '';
+          document.getElementById('userUsernameDisplay').textContent = user.username || '';
+          document.getElementById('userFirstNameDisplay').textContent = user.first_name || '';
+          document.getElementById('userLastNameDisplay').textContent = user.last_name || '';
+          document.getElementById('userDrivingLicenseDisplay').textContent = user.driving_license || '';
+          document.getElementById('userNationalIdDisplay').textContent = user.national_id || '';
+          document.getElementById('userNumberPlateDisplay').textContent = user.number_plate || '';
+          document.getElementById('userAddressDisplay').textContent = user.address || '';
+          document.getElementById('userLocationDisplay').textContent = user.location || '';
+          document.getElementById('userCountryDisplay').textContent = user.country || '';
+          document.getElementById('userEmergencyContactDisplay').textContent = user.emergency_contact_number || '';
+          document.getElementById('userRelatedEmergencyContactDisplay').textContent = user.emergency_contact_number_of_a_related_person || '';
+          document.getElementById('userLatitudeDisplay').textContent = user.latitude || '';
+          document.getElementById('userLongitudeDisplay').textContent = user.longitude || '';
+        } else {
+          alert('User not found');
+        }
+      } catch (err) {
+        console.error('Error:', err);
+        alert('Failed to fetch user data.');
+      }
+    }
+
+    // Fetch Admin Data
+    async function fetchAdminData(email, admin_type) {
+      try {
+        const response = await fetch(`${backendUrl}/admin-data`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, admin_type })
+        });
+        const admin = await response.json();
+        if (response.ok) {
+          document.getElementById('adminEmailDisplay').textContent = admin.email || '';
+          document.getElementById('adminUsernameDisplay').textContent = admin.username || '';
+          document.getElementById('adminTypeDisplay').textContent = admin.admin_type || '';
+          document.getElementById('adminCountryDisplay').textContent = admin.country || '';
+          document.getElementById('adminThanaDisplay').textContent = admin.thana || '';
+          document.getElementById('adminEmergencyResponseDisplay').textContent = admin.emergency_response || '';
+          document.getElementById('adminServiceInfoDisplay').textContent = admin.service_info || '';
+          document.getElementById('adminLatitudeDisplay').textContent = admin.latitude || '';
+          document.getElementById('adminLongitudeDisplay').textContent = admin.longitude || '';
+        } else {
+          alert('Admin not found');
+        }
+      } catch (err) {
+        console.error('Error:', err);
+        alert('Failed to fetch admin data.');
+      }
+    }
+
+    // Handle User Change Password
+    document.getElementById('userChangePasswordForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData);
+      try {
+        const response = await fetch(`${backendUrl}/change-password-user`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: document.getElementById('userEmailDisplay').textContent, newPassword: data.newPassword })
+        });
+        const result = await response.text();
+        alert(result);
+        if (response.ok) e.target.reset();
+      } catch (err) {
+        console.error('Error:', err);
+        alert('Failed to change password.');
+      }
+    });
+
+    // Handle Admin Change Password
+    document.getElementById('adminChangePasswordForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData);
+      try {
+        const response = await fetch(`${backendUrl}/change-password-admin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            email: document.getElementById('adminEmailDisplay').textContent, 
+            newPassword: data.newPassword, 
+            admin_type: document.getElementById('adminTypeDisplay').textContent 
+          })
+        });
+        const result = await response.text();
+        alert(result);
+        if (response.ok) e.target.reset();
+      } catch (err) {
+        console.error('Error:', err);
+        alert('Failed to change password.');
+      }
+    });
+
+    // Handle User Image Upload
+    document.getElementById('userUploadImageForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      formData.append('email', document.getElementById('userEmailDisplay').textContent);
+      try {
+        const response = await fetch(`${backendUrl}/upload-image-user`, {
+          method: 'POST',
+          body: formData
+        });
+        const result = await response.text();
+        alert(result);
+        if (response.ok) e.target.reset();
+      } catch (err) {
+        console.error('Error:', err);
+        alert('Failed to upload image.');
+      }
+    });
+
+    // Handle Admin Image Upload
+    document.getElementById('adminUploadImageForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      formData.append('email', document.getElementById('adminEmailDisplay').textContent);
+      formData.append('admin_type', document.getElementById('adminTypeDisplay').textContent);
+      try {
+        const response = await fetch(`${backendUrl}/upload-image-admin`, {
+          method: 'POST',
+          body: formData
+        });
+        const result = await response.text();
+        alert(result);
+        if (response.ok) e.target.reset();
+      } catch (err) {
+        console.error('Error:', err);
+        alert('Failed to upload image.');
+      }
+    });
+
+    // Geolocation
+    function allowGeo() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+          document.querySelectorAll('input[name="latitude"]').forEach(input => input.value = position.coords.latitude);
+          document.querySelectorAll('input[name="longitude"]').forEach(input => input.value = position.coords.longitude);
+          document.getElementById('geoModal').style.display = 'none';
+        }, () => {
+          alert('Geolocation access denied.');
+          document.getElementById('geoModal').style.display = 'none';
+        });
+      } else {
+        alert('Geolocation is not supported by this browser.');
+        document.getElementById('geoModal').style.display = 'none';
+      }
+    }
+
+    function denyGeo() {
+      document.getElementById('geoModal').style.display = 'none';
+    }
+
+    // Initialize
+    window.onload = () => {
+      loadDropdowns();
+      // Show login section by default, no geolocation modal
+      showSection('loginSection');
+    };
+  </script>
+</body>
+</html>
