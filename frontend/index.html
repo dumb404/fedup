@@ -497,17 +497,16 @@
         });
       });
 
-      // Populate admin type dropdown
-      const adminTypeSelect = document.querySelector('select[name="admin_type"]');
-      if (adminTypeSelect) {
-        adminTypeSelect.innerHTML = '<option value="">Select Type</option>';
+      // Populate admin type dropdowns (both registration and login)
+      document.querySelectorAll('select[name="admin_type"]').forEach(select => {
+        select.innerHTML = '<option value="">Select Type</option>';
         adminOptions.types.forEach(type => {
           const option = document.createElement('option');
           option.value = type;
           option.textContent = type;
-          adminTypeSelect.appendChild(option);
+          select.appendChild(option);
         });
-      }
+      });
 
       // Populate thana dropdown
       const thanaSelect = document.querySelector('select[name="thana"]');
@@ -629,6 +628,7 @@
           body: JSON.stringify(data)
         });
         console.log('User login response status:', response.status);
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const result = await response.text();
         console.log('User login response text:', result);
         if (response.ok) {
@@ -643,7 +643,7 @@
         }
       } catch (err) {
         console.error('Error during user login:', err.message);
-        errorElement.textContent = `Failed to connect to the server: ${err.message}. Please check if the server is running and try again.`;
+        errorElement.textContent = `Failed to connect to the server: ${err.message}. Please check if https://fedup-1bug.onrender.com is running and try again.`;
         errorElement.style.display = 'block';
       }
     });
@@ -663,6 +663,7 @@
           body: JSON.stringify(data)
         });
         console.log('Admin login response status:', response.status);
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const result = await response.text();
         console.log('Admin login response text:', result);
         if (response.ok) {
@@ -677,7 +678,7 @@
         }
       } catch (err) {
         console.error('Error during admin login:', err.message);
-        errorElement.textContent = `Failed to connect to the server: ${err.message}. Please check if the server is running and try again.`;
+        errorElement.textContent = `Failed to connect to the server: ${err.message}. Please check if https://fedup-1bug.onrender.com is running and try again.`;
         errorElement.style.display = 'block';
       }
     });
