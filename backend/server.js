@@ -12,8 +12,8 @@ const Admin = require('./models/admin');
 const app = express();
 
 // Middleware
-app.use(cors());
-app.use(bodyParser.json());
+app.use(cors({ origin: '*' })); // Allow all origins for now; update to specific frontend URL in production
+app.use(express.json()); // Replace bodyParser.json() with express.json()
 app.use(express.static('public'));
 
 // Multer for image upload
@@ -24,7 +24,10 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
@@ -36,14 +39,14 @@ app.post('/register-user', async (req, res) => {
     if (!password || !email || !username || !first_name || !last_name || !country) {
       return res.status(400).send('Missing required fields');
     }
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: new RegExp('^' + email + '$', 'i') });
     if (existingUser) {
       return res.status(400).send('Email already registered');
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({ ...req.body, password: hashedPassword });
     await newUser.save();
-    res.send('User Registered Successfully');
+    res.status(200).send('Registration successful');
   } catch (err) {
     console.error('Error registering user:', err);
     res.status(500).send(`Error registering user: ${err.message}`);
@@ -58,14 +61,17 @@ app.post('/register-admin', async (req, res) => {
     if (!password || !email || !username || !admin_type || !country || !thana) {
       return res.status(400).send('Missing required fields');
     }
-    const existingAdmin = await Admin.findOne({ email, admin_type });
+    const existingAdmin = await Admin.findOne({ 
+      email: new RegExp('^' + email + '$', 'i'), 
+      admin_type 
+    });
     if (existingAdmin) {
-      return res.status(400).send('Email already registered for this admin type');
+      return res.status(400).send('Admin already registered for this email and type');
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const newAdmin = new Admin({ ...req.body, password: hashedPassword });
     await newAdmin.save();
-    res.send('Admin Registered Successfully');
+    res.status(200).send('Registration successful');
   } catch (err) {
     console.error('Error registering admin:', err);
     res.status(500).send(`Error registering admin: ${err.message}`);
@@ -77,19 +83,40 @@ app.post('/login-user', async (req, res) => {
   console.log('POST /login-user', req.body);
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(401).send('Invalid email or password');
+    if (!email || !password) {
+      return res.status(400).send('Missing email or password');
     }
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (isMatch) {
-      res.send('Login Successful');
+
+    // Case-insensitive email lookup
+    const user = await User.findOne({ email: new RegExp('^' + email.trim() + '$', 'i') });
+    if (!user) {
+      console.log(`User not found for email: ${email}`);
+      return res.status(404).send('User not found');
+    }
+
+    // Check if the stored password is hashed (starts with $2b)
+    const isHashed = user.password.startsWith('$2b$');
+    let isMatch;
+
+    if (isHashed) {
+      // Compare with bcrypt if hashed
+      isMatch = await bcrypt.compare(password.trim(), user.password);
     } else {
-      res.status(401).send('Invalid email or password');
+      // Direct comparison if plaintext (temporary fix)
+      console.warn(`Plaintext password detected for user ${email}. Please update to hashed password.`);
+      isMatch = password.trim() === user.password.trim();
+    }
+
+    if (isMatch) {
+      console.log(`Login successful for user: ${email}`);
+      res.status(200).send('Login successful');
+    } else {
+      console.log(`Invalid password for user: ${email}`);
+      return res.status(401).send('Invalid password');
     }
   } catch (err) {
-    console.error('Error during login:', err);
-    res.status(500).send('Error during login');
+    console.error('Error during user login:', err);
+    res.status(500).send(`Error during login: ${err.message}`);
   }
 });
 
@@ -98,19 +125,41 @@ app.post('/login-admin', async (req, res) => {
   console.log('POST /login-admin', req.body);
   try {
     const { email, password, admin_type } = req.body;
-    const admin = await Admin.findOne({ email, admin_type });
-    if (!admin) {
-      return res.status(401).send('Invalid email, password, or admin type');
+    if (!email || !password || !admin_type) {
+      return res.status(400).send('Missing required fields');
     }
-    const isMatch = await bcrypt.compare(password, admin.password);
-    if (isMatch) {
-      res.send('Login Successful');
+
+    // Case-insensitive email lookup
+    const admin = await Admin.findOne({ 
+      email: new RegExp('^' + email.trim() + '$', 'i'), 
+      admin_type 
+    });
+    if (!admin) {
+      console.log(`Admin not found for email: ${email}, admin_type: ${admin_type}`);
+      return res.status(404).send('Admin not found');
+    }
+
+    // Check if the stored password is hashed
+    const isHashed = admin.password.startsWith('$2b$');
+    let isMatch;
+
+    if (isHashed) {
+      isMatch = await bcrypt.compare(password.trim(), admin.password);
     } else {
-      res.status(401).send('Invalid email, password, or admin type');
+      console.warn(`Plaintext password detected for admin ${email}. Please update to hashed password.`);
+      isMatch = password.trim() === admin.password.trim();
+    }
+
+    if (isMatch) {
+      console.log(`Login successful for admin: ${email}`);
+      res.status(200).send('Login successful');
+    } else {
+      console.log(`Invalid password for admin: ${email}`);
+      return res.status(401).send('Invalid password');
     }
   } catch (err) {
-    console.error('Error during login:', err);
-    res.status(500).send('Error during login');
+    console.error('Error during admin login:', err);
+    res.status(500).send(`Error during login: ${err.message}`);
   }
 });
 
@@ -119,15 +168,15 @@ app.post('/user-data', async (req, res) => {
   console.log('POST /user-data', req.body);
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email }).select('-password');
+    const user = await User.findOne({ email: new RegExp('^' + email.trim() + '$', 'i') }).select('-password');
     if (user) {
-      res.json(user);
+      res.status(200).json(user);
     } else {
       res.status(404).send('User not found');
     }
   } catch (err) {
     console.error('Error fetching user data:', err);
-    res.status(500).send('Error fetching user data');
+    res.status(500).send(`Error fetching user data: ${err.message}`);
   }
 });
 
@@ -136,15 +185,18 @@ app.post('/admin-data', async (req, res) => {
   console.log('POST /admin-data', req.body);
   try {
     const { email, admin_type } = req.body;
-    const admin = await Admin.findOne({ email, admin_type }).select('-password');
+    const admin = await Admin.findOne({ 
+      email: new RegExp('^' + email.trim() + '$', 'i'), 
+      admin_type 
+    }).select('-password');
     if (admin) {
-      res.json(admin);
+      res.status(200).json(admin);
     } else {
       res.status(404).send('Admin not found');
     }
   } catch (err) {
     console.error('Error fetching admin data:', err);
-    res.status(500).send('Error fetching admin data');
+    res.status(500).send(`Error fetching admin data: ${err.message}`);
   }
 });
 
@@ -155,18 +207,18 @@ app.post('/change-password-user', async (req, res) => {
     const { email, newPassword } = req.body;
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     const user = await User.findOneAndUpdate(
-      { email },
+      { email: new RegExp('^' + email.trim() + '$', 'i') },
       { password: hashedPassword },
       { new: true }
     );
     if (user) {
-      res.send('Password changed successfully');
+      res.status(200).send('Password changed successfully');
     } else {
       res.status(404).send('User not found');
     }
   } catch (err) {
     console.error('Error changing password:', err);
-    res.status(500).send('Error changing password');
+    res.status(500).send(`Error changing password: ${err.message}`);
   }
 });
 
@@ -177,18 +229,18 @@ app.post('/change-password-admin', async (req, res) => {
     const { email, newPassword, admin_type } = req.body;
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     const admin = await Admin.findOneAndUpdate(
-      { email, admin_type },
+      { email: new RegExp('^' + email.trim() + '$', 'i'), admin_type },
       { password: hashedPassword },
       { new: true }
     );
     if (admin) {
-      res.send('Password changed successfully');
+      res.status(200).send('Password changed successfully');
     } else {
       res.status(404).send('Admin not found');
     }
   } catch (err) {
     console.error('Error changing password:', err);
-    res.status(500).send('Error changing password');
+    res.status(500).send(`Error changing password: ${err.message}`);
   }
 });
 
@@ -198,18 +250,18 @@ app.post('/upload-image-user', upload.single('image'), async (req, res) => {
   try {
     const { email } = req.body;
     const user = await User.findOneAndUpdate(
-      { email },
+      { email: new RegExp('^' + email.trim() + '$', 'i') },
       { image: req.file ? `/uploads/${req.file.filename}` : null },
       { new: true }
     );
     if (user) {
-      res.send('Image uploaded successfully');
+      res.status(200).send('Image uploaded successfully');
     } else {
       res.status(404).send('User not found');
     }
   } catch (err) {
     console.error('Error uploading image:', err);
-    res.status(500).send('Error uploading image');
+    res.status(500).send(`Error uploading image: ${err.message}`);
   }
 });
 
@@ -219,18 +271,18 @@ app.post('/upload-image-admin', upload.single('image'), async (req, res) => {
   try {
     const { email, admin_type } = req.body;
     const admin = await Admin.findOneAndUpdate(
-      { email, admin_type },
+      { email: new RegExp('^' + email.trim() + '$', 'i'), admin_type },
       { image: req.file ? `/uploads/${req.file.filename}` : null },
       { new: true }
     );
     if (admin) {
-      res.send('Image uploaded successfully');
+      res.status(200).send('Image uploaded successfully');
     } else {
       res.status(404).send('Admin not found');
     }
   } catch (err) {
     console.error('Error uploading image:', err);
-    res.status(500).send('Error uploading image');
+    res.status(500).send(`Error uploading image: ${err.message}`);
   }
 });
 
