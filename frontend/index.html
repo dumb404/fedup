@@ -136,7 +136,7 @@
         <option value="user">User Registration</option>
         <option value="admin">Admin Registration</option>
       </select>
-      <p id="dropdownError" class="error">Failed to load dropdown data. Please try again.</p>
+      <p id="dropdownError" class="error">Failed to load dropdown data. Using fallback data.</p>
 
       <form id="userRegisterForm" class="section" style="display: none;">
         <h3>User Registration</h3>
@@ -437,9 +437,9 @@
       document.getElementById('adminRegisterForm').style.display = type === 'admin' ? 'block' : 'none';
     }
 
-    // Toggle login forms (fixed with debug logging)
+    // Toggle login forms
     function toggleLoginForm() {
-      console.log('toggleLoginForm called with value:', document.getElementById('loginType').value); // Debug log
+      console.log('toggleLoginForm called with value:', document.getElementById('loginType').value);
       const type = document.getElementById('loginType').value;
       const userForm = document.getElementById('userLoginForm');
       const adminForm = document.getElementById('adminLoginForm');
@@ -454,54 +454,71 @@
       }
     }
 
-    // Load dropdowns (fixed to populate options)
+    // Load dropdowns with fallback data
     async function loadDropdowns() {
+      // Fallback data in case fetch fails
+      const fallbackCountries = ["Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Argentina", "Brazil", "Bangladesh", "Belgium", "Canada", "China", "Denmark", "Egypt", "France", "Germany", "India", "Indonesia", "Italy", "Japan", "Kenya", "Malaysia", "Mexico", "Nigeria", "Pakistan", "Russia", "South Africa", "South Korea", "Spain", "Thailand", "United Kingdom", "United States", "Vietnam"];
+      const fallbackAdminOptions = {
+        types: ["Hospital", "Police Station", "Mechanic Shop", "OGs"],
+        thanas: ["Lalbag", "New Market", "Shahbag", "Hazaribag", "Dhanmondi", "Mohammadpur"]
+      };
+
+      let countries = fallbackCountries;
+      let adminOptions = fallbackAdminOptions;
+
       try {
-        const [countriesRes, adminOptionsRes] = await Promise.all([
-          fetch('/public/countries.json'),
-          fetch('/public/adminOptions.json')
-        ]);
-        if (!countriesRes.ok || !adminOptionsRes.ok) throw new Error('Failed to fetch JSON files');
-        const countries = await countriesRes.json();
-        const adminOptions = await adminOptionsRes.json();
+        console.log('Fetching countries.json from /public/countries.json');
+        const countriesRes = await fetch('/public/countries.json');
+        console.log('countriesRes status:', countriesRes.status);
+        if (!countriesRes.ok) throw new Error(`Failed to fetch countries.json: ${countriesRes.statusText}`);
 
-        // Populate country dropdowns
-        document.querySelectorAll('select[name="country"]').forEach(select => {
-          select.innerHTML = '<option value="">Select Country</option>'; // Reset options
-          countries.forEach(country => {
-            const option = document.createElement('option');
-            option.value = country;
-            option.textContent = country;
-            select.appendChild(option);
-          });
-        });
+        console.log('Fetching adminOptions.json from /public/adminOptions.json');
+        const adminOptionsRes = await fetch('/public/adminOptions.json');
+        console.log('adminOptionsRes status:', adminOptionsRes.status);
+        if (!adminOptionsRes.ok) throw new Error(`Failed to fetch adminOptions.json: ${adminOptionsRes.statusText}`);
 
-        // Populate admin type dropdown
-        const adminTypeSelect = document.querySelector('select[name="admin_type"]');
-        if (adminTypeSelect) {
-          adminTypeSelect.innerHTML = '<option value="">Select Type</option>'; // Reset options
-          adminOptions.types.forEach(type => {
-            const option = document.createElement('option');
-            option.value = type;
-            option.textContent = type;
-            adminTypeSelect.appendChild(option);
-          });
-        }
-
-        // Populate thana dropdown
-        const thanaSelect = document.querySelector('select[name="thana"]');
-        if (thanaSelect) {
-          thanaSelect.innerHTML = '<option value="">Select Thana</option>'; // Reset options
-          adminOptions.thanas.forEach(thana => {
-            const option = document.createElement('option');
-            option.value = thana;
-            option.textContent = thana;
-            thanaSelect.appendChild(option);
-          });
-        }
+        countries = await countriesRes.json();
+        adminOptions = await adminOptionsRes.json();
+        console.log('Successfully fetched data:', { countries, adminOptions });
       } catch (err) {
         console.error('Error loading dropdowns:', err);
+        document.getElementById('dropdownError').textContent = 'Failed to load dropdown data. Using fallback data.';
         document.getElementById('dropdownError').style.display = 'block';
+      }
+
+      // Populate country dropdowns
+      document.querySelectorAll('select[name="country"]').forEach(select => {
+        select.innerHTML = '<option value="">Select Country</option>';
+        countries.forEach(country => {
+          const option = document.createElement('option');
+          option.value = country;
+          option.textContent = country;
+          select.appendChild(option);
+        });
+      });
+
+      // Populate admin type dropdown
+      const adminTypeSelect = document.querySelector('select[name="admin_type"]');
+      if (adminTypeSelect) {
+        adminTypeSelect.innerHTML = '<option value="">Select Type</option>';
+        adminOptions.types.forEach(type => {
+          const option = document.createElement('option');
+          option.value = type;
+          option.textContent = type;
+          adminTypeSelect.appendChild(option);
+        });
+      }
+
+      // Populate thana dropdown
+      const thanaSelect = document.querySelector('select[name="thana"]');
+      if (thanaSelect) {
+        thanaSelect.innerHTML = '<option value="">Select Thana</option>';
+        adminOptions.thanas.forEach(thana => {
+          const option = document.createElement('option');
+          option.value = thana;
+          option.textContent = thana;
+          thanaSelect.appendChild(option);
+        });
       }
     }
 
@@ -545,8 +562,8 @@
           errorElement.style.display = 'block';
         }
       } catch (err) {
-        console.error('Error:', err);
-        errorElement.textContent = 'Failed to connect to the server. Please try again.';
+        console.error('Error during user registration:', err.message);
+        errorElement.textContent = `Failed to connect to the server: ${err.message}. Please try again.`;
         errorElement.style.display = 'block';
       }
     });
@@ -591,13 +608,13 @@
           errorElement.style.display = 'block';
         }
       } catch (err) {
-        console.error('Error:', err);
-        errorElement.textContent = 'Failed to connect to the server. Please try again.';
+        console.error('Error during admin registration:', err.message);
+        errorElement.textContent = `Failed to connect to the server: ${err.message}. Please try again.`;
         errorElement.style.display = 'block';
       }
     });
 
-    // Handle User Login
+    // Handle User Login with improved error handling
     document.getElementById('userLoginForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const formData = new FormData(e.target);
@@ -605,12 +622,15 @@
       const errorElement = document.getElementById('userLoginError');
 
       try {
+        console.log('Attempting user login with data:', data);
         const response = await fetch(`${backendUrl}/login-user`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
         });
+        console.log('User login response status:', response.status);
         const result = await response.text();
+        console.log('User login response text:', result);
         if (response.ok) {
           errorElement.textContent = result;
           errorElement.style.color = 'green';
@@ -618,12 +638,12 @@
           fetchUserData(data.email);
           showSection('userPanel');
         } else {
-          errorElement.textContent = result || 'Error logging in';
+          errorElement.textContent = result || `Error logging in: HTTP ${response.status}`;
           errorElement.style.display = 'block';
         }
       } catch (err) {
-        console.error('Error:', err);
-        errorElement.textContent = 'Failed to connect to the server. Please try again.';
+        console.error('Error during user login:', err.message);
+        errorElement.textContent = `Failed to connect to the server: ${err.message}. Please check if the server is running and try again.`;
         errorElement.style.display = 'block';
       }
     });
@@ -636,12 +656,15 @@
       const errorElement = document.getElementById('adminLoginError');
 
       try {
+        console.log('Attempting admin login with data:', data);
         const response = await fetch(`${backendUrl}/login-admin`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
         });
+        console.log('Admin login response status:', response.status);
         const result = await response.text();
+        console.log('Admin login response text:', result);
         if (response.ok) {
           errorElement.textContent = result;
           errorElement.style.color = 'green';
@@ -649,12 +672,12 @@
           fetchAdminData(data.email, data.admin_type);
           showSection('adminPanel');
         } else {
-          errorElement.textContent = result || 'Error logging in';
+          errorElement.textContent = result || `Error logging in: HTTP ${response.status}`;
           errorElement.style.display = 'block';
         }
       } catch (err) {
-        console.error('Error:', err);
-        errorElement.textContent = 'Failed to connect to the server. Please try again.';
+        console.error('Error during admin login:', err.message);
+        errorElement.textContent = `Failed to connect to the server: ${err.message}. Please check if the server is running and try again.`;
         errorElement.style.display = 'block';
       }
     });
@@ -688,8 +711,8 @@
           document.getElementById('userLoginError').style.display = 'block';
         }
       } catch (err) {
-        console.error('Error:', err);
-        document.getElementById('userLoginError').textContent = 'Failed to fetch user data.';
+        console.error('Error fetching user data:', err.message);
+        document.getElementById('userLoginError').textContent = `Failed to fetch user data: ${err.message}.`;
         document.getElementById('userLoginError').style.display = 'block';
       }
     }
@@ -718,8 +741,8 @@
           document.getElementById('adminLoginError').style.display = 'block';
         }
       } catch (err) {
-        console.error('Error:', err);
-        document.getElementById('adminLoginError').textContent = 'Failed to fetch admin data.';
+        console.error('Error fetching admin data:', err.message);
+        document.getElementById('adminLoginError').textContent = `Failed to fetch admin data: ${err.message}.`;
         document.getElementById('adminLoginError').style.display = 'block';
       }
     }
@@ -742,8 +765,8 @@
         errorElement.style.display = 'block';
         if (response.ok) e.target.reset();
       } catch (err) {
-        console.error('Error:', err);
-        errorElement.textContent = 'Failed to change password.';
+        console.error('Error changing user password:', err.message);
+        errorElement.textContent = `Failed to change password: ${err.message}.`;
         errorElement.style.display = 'block';
       }
     });
@@ -770,8 +793,8 @@
         errorElement.style.display = 'block';
         if (response.ok) e.target.reset();
       } catch (err) {
-        console.error('Error:', err);
-        errorElement.textContent = 'Failed to change password.';
+        console.error('Error changing admin password:', err.message);
+        errorElement.textContent = `Failed to change password: ${err.message}.`;
         errorElement.style.display = 'block';
       }
     });
@@ -793,8 +816,8 @@
         errorElement.style.display = 'block';
         if (response.ok) e.target.reset();
       } catch (err) {
-        console.error('Error:', err);
-        errorElement.textContent = 'Failed to upload image.';
+        console.error('Error uploading user image:', err.message);
+        errorElement.textContent = `Failed to upload image: ${err.message}.`;
         errorElement.style.display = 'block';
       }
     });
@@ -817,8 +840,8 @@
         errorElement.style.display = 'block';
         if (response.ok) e.target.reset();
       } catch (err) {
-        console.error('Error:', err);
-        errorElement.textContent = 'Failed to upload image.';
+        console.error('Error uploading admin image:', err.message);
+        errorElement.textContent = `Failed to upload image: ${err.message}.`;
         errorElement.style.display = 'block';
       }
     });
@@ -852,7 +875,7 @@
     window.onload = () => {
       loadDropdowns();
       showSection('loginSection');
-      toggleLoginForm(); // Ensure login form state is set on load
+      toggleLoginForm();
     };
   </script>
 </body>
