@@ -49,10 +49,6 @@
       margin: 0;
       padding: 0;
       background-color: #f0f0f0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
     }
 
     .container {
@@ -62,7 +58,7 @@
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       width: 100%;
       max-width: 400px;
-      margin: 20px;
+      margin: 20px auto; /* Center horizontally, add top margin */
     }
 
     .slider-tab {
@@ -139,7 +135,6 @@
     .error {
       color: #d93025;
       font-size: 12px;
-      display: none;
       margin-top: 5px;
     }
 
@@ -265,7 +260,7 @@
         <div class="form-group">
           <label for="userEmail">Email</label>
           <input type="email" id="userEmail" required>
-          <div id="userEmailError" class="error">Please enter a valid email</div>
+          <div id="userEmailError" class="error"></div>
         </div>
         <div class="form-group">
           <label for="userUsername">Username</label>
@@ -310,12 +305,12 @@
         <div class="form-group">
           <label for="userPassword">Password</label>
           <input type="password" id="userPassword" required>
-          <div class="error">Password must be at least 8 characters</div>
+          <div class="error"></div>
         </div>
         <div class="form-group">
           <label for="userConfirmPassword">Confirm Password</label>
           <input type="password" id="userConfirmPassword" required>
-          <div class="error">Passwords do not match</div>
+          <div class="error"></div>
         </div>
         <div class="form-group">
           <label for="userCountry">Country</label>
@@ -343,7 +338,7 @@
         <div class="form-group">
           <label for="adminEmail">Email</label>
           <input type="email" id="adminEmail" required>
-          <div id="adminEmailError" class="error">Please enter a valid email</div>
+          <div id="adminEmailError" class="error"></div>
         </div>
         <div class="form-group">
           <label for="adminUsername">Username</label>
@@ -386,12 +381,12 @@
         <div class="form-group">
           <label for="adminPassword">Password</label>
           <input type="password" id="adminPassword" required>
-          <div class="error">Password must be at least 8 characters</div>
+          <div class="error"></div>
         </div>
         <div class="form-group">
           <label for="adminConfirmPassword">Confirm Password</label>
           <input type="password" id="adminConfirmPassword" required>
-          <div class="error">Passwords do not match</div>
+          <div class="error"></div>
         </div>
         <div class="button-container">
           <button onclick="registerAdmin()">Register</button>
@@ -407,12 +402,12 @@
         <div class="form-group">
           <label for="userLoginEmail">Email</label>
           <input type="email" id="userLoginEmail" required>
-          <div id="userLoginEmailError" class="error">Please enter a valid email</div>
+          <div id="userLoginEmailError" class="error"></div>
         </div>
         <div class="form-group">
           <label for="userLoginPassword">Password</label>
           <input type="password" id="userLoginPassword" required>
-          <div class="error">Password must be at least 8 characters</div>
+          <div class="error"></div>
         </div>
         <div class="button-container">
           <button onclick="loginUser()">Login</button>
@@ -426,12 +421,12 @@
         <div class="form-group">
           <label for="adminLoginEmail">Email</label>
           <input type="email" id="adminLoginEmail" required>
-          <div id="adminLoginEmailError" class="error">Please enter a valid email</div>
+          <div id="adminLoginEmailError" class="error"></div>
         </div>
         <div class="form-group">
           <label for="adminLoginPassword">Password</label>
           <input type="password" id="adminLoginPassword" required>
-          <div class="error">Password must be at least 8 characters</div>
+          <div class="error"></div>
         </div>
         <div class="form-group">
           <label for="adminLoginType">Admin Type</label>
@@ -469,7 +464,7 @@
       <div class="form-group">
         <label for="userNewPassword">New Password</label>
         <input type="password" id="userNewPassword" required>
-        <div class="error">Password must be at least 8 characters</div>
+        <div class="error"></div>
         <button onclick="changeUserPassword()">Change Password</button>
       </div>
       <h3>Upload Profile Image</h3>
@@ -497,7 +492,7 @@
       <div class="form-group">
         <label for="adminNewPassword">New Password</label>
         <input type="password" id="adminNewPassword" required>
-        <div class="error">Password must be at least 8 characters</div>
+        <div class="error"></div>
         <button onclick="changeAdminPassword()">Change Password</button>
       </div>
       <h3>Upload Profile Image</h3>
@@ -520,6 +515,51 @@
   </div>
 
   <script>
+    const BASE_URL = 'https://fedup-1buq.onrender.com/api';
+
+    // Populate dropdowns
+    async function populateDropdowns() {
+      try {
+        // Fetch countries
+        const countriesRes = await fetch('countries.json');
+        const countries = await countriesRes.json();
+        const userCountrySelect = document.getElementById('userCountry');
+        const adminCountrySelect = document.getElementById('adminCountry');
+        countries.forEach(country => {
+          const option = document.createElement('option');
+          option.value = country;
+          option.textContent = country;
+          userCountrySelect.appendChild(option.cloneNode(true));
+          adminCountrySelect.appendChild(option);
+        });
+
+        // Fetch admin options
+        const adminOptionsRes = await fetch('adminOptions.json');
+        const adminOptions = await adminOptionsRes.json();
+        // Admin Types
+        const adminTypeSelect = document.getElementById('adminType');
+        const adminLoginTypeSelect = document.getElementById('adminLoginType');
+        adminOptions.types.forEach(type => {
+          const option = document.createElement('option');
+          option.value = type;
+          option.textContent = type;
+          adminTypeSelect.appendChild(option.cloneNode(true));
+          adminLoginTypeSelect.appendChild(option);
+        });
+        // Thanas
+        const adminThanaSelect = document.getElementById('adminThana');
+        adminOptions.thanas.forEach(thana => {
+          const option = document.createElement('option');
+          option.value = thana;
+          option.textContent = thana;
+          adminThanaSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error loading dropdowns:', error);
+        alert('Failed to load dropdown options. Please try again.');
+      }
+    }
+
     function openTab(tabName) {
       document.querySelectorAll('.tablink').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.form-container, .panel-container').forEach(tab => tab.classList.remove('active'));
@@ -569,55 +609,373 @@
       document.getElementById('locationPrompt').style.display = 'none';
     }
 
-    function registerUser() {
-      // Placeholder for user registration logic
-      alert('User registered');
-      openTab('userPanel');
+    function validateEmail(email) {
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return re.test(email);
     }
 
-    function registerAdmin() {
-      // Placeholder for admin registration logic
-      alert('Admin registered');
-      openTab('adminPanel');
+    function validatePassword(password) {
+      return password.length >= 8;
     }
 
-    function loginUser() {
-      // Placeholder for user login logic
-      alert('User logged in');
-      openTab('userPanel');
+    async function registerUser() {
+      const email = document.getElementById('userEmail').value;
+      const username = document.getElementById('userUsername').value;
+      const firstName = document.getElementById('userFirstName').value;
+      const lastName = document.getElementById('userLastName').value;
+      const drivingLicense = document.getElementById('userDrivingLicense').value;
+      const nationalID = document.getElementById('userNationalID').value;
+      const numberPlate = document.getElementById('userNumberPlate').value;
+      const address = document.getElementById('userAddress').value;
+      const location = document.getElementById('userLocation').value;
+      const latitude = document.getElementById('userLatitude').value;
+      const longitude = document.getElementById('userLongitude').value;
+      const password = document.getElementById('userPassword').value;
+      const confirmPassword = document.getElementById('userConfirmPassword').value;
+      const country = document.getElementById('userCountry').value;
+      const emergencyContact = document.getElementById('userEmergencyContact').value;
+      const relatedEmergencyContact = document.getElementById('userRelatedEmergencyContact').value;
+
+      // Client-side validation
+      if (!validateEmail(email)) {
+        document.getElementById('userEmailError').textContent = 'Please enter a valid email';
+        return;
+      }
+      if (!validatePassword(password)) {
+        document.querySelector('#userPassword .error').textContent = 'Password must be at least 8 characters';
+        return;
+      }
+      if (password !== confirmPassword) {
+        document.querySelector('#userConfirmPassword .error').textContent = 'Passwords do not match';
+        return;
+      }
+      if (!country) {
+        alert('Please select a country');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${BASE_URL}/user/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email, username, password, firstName, lastName, drivingLicense, nationalID,
+            numberPlate, address, location, latitude, longitude, country, emergencyContact,
+            relatedEmergencyContact
+          })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          alert('User registered successfully');
+          sessionStorage.setItem('token', data.token);
+          await fetchUserProfile();
+          openTab('userPanel');
+        } else {
+          alert(data.message || 'Registration failed');
+        }
+      } catch (error) {
+        alert('Error registering user: ' + error.message);
+      }
     }
 
-    function loginAdmin() {
-      // Placeholder for admin login logic
-      alert('Admin logged in');
-      openTab('adminPanel');
+    async function registerAdmin() {
+      const email = document.getElementById('adminEmail').value;
+      const username = document.getElementById('adminUsername').value;
+      const adminType = document.getElementById('adminType').value;
+      const country = document.getElementById('adminCountry').value;
+      const thana = document.getElementById('adminThana').value;
+      const emergencyResponse = document.getElementById('adminEmergencyResponse').value;
+      const serviceInfo = document.getElementById('adminServiceInfo').value;
+      const latitude = document.getElementById('adminLatitude').value;
+      const longitude = document.getElementById('adminLongitude').value;
+      const password = document.getElementById('adminPassword').value;
+      const confirmPassword = document.getElementById('adminConfirmPassword').value;
+
+      // Client-side validation
+      if (!validateEmail(email)) {
+        document.getElementById('adminEmailError').textContent = 'Please enter a valid email';
+        return;
+      }
+      if (!validatePassword(password)) {
+        document.querySelector('#adminPassword .error').textContent = 'Password must be at least 8 characters';
+        return;
+      }
+      if (password !== confirmPassword) {
+        document.querySelector('#adminConfirmPassword .error').textContent = 'Passwords do not match';
+        return;
+      }
+      if (!adminType || !country || !thana) {
+        alert('Please select all required fields');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${BASE_URL}/admin/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email, username, adminType, country, thana, emergencyResponse, serviceInfo,
+            latitude, longitude
+          })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          alert('Admin registered successfully');
+          sessionStorage.setItem('token', data.token);
+          await fetchAdminProfile();
+          openTab('adminPanel');
+        } else {
+          alert(data.message || 'Admin registration failed');
+        }
+      } catch (error) {
+        alert('Error registering admin: ' + error.message);
+      }
     }
 
-    function changeUserPassword() {
-      // Placeholder for user password change logic
-      alert('User password changed');
+    async function loginUser() {
+      const email = document.getElementById('userLoginEmail').value;
+      const password = document.getElementById('userLoginPassword').value;
+
+      if (!validateEmail(email)) {
+        document.getElementById('userLoginEmailError').textContent = 'Please enter a valid email';
+        return;
+      }
+      if (!validatePassword(password)) {
+        document.querySelector('#userLoginPassword .error').textContent = 'Password must be at least 8 characters';
+        return;
+      }
+
+      try {
+        const response = await fetch(`${BASE_URL}/user/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          sessionStorage.setItem('token', data.token);
+          await fetchUserProfile();
+          openTab('userPanel');
+        } else {
+          alert(data.message || 'Login failed');
+        }
+      } catch (error) {
+        alert('Error logging in: ' + error.message);
+      }
     }
 
-    function changeAdminPassword() {
-      // Placeholder for admin password change logic
-      alert('Admin password changed');
+    async function loginAdmin() {
+      const email = document.getElementById('adminLoginEmail').value;
+      const password = document.getElementById('adminLoginPassword').value;
+      const adminType = document.getElementById('adminLoginType').value;
+
+      if (!validateEmail(email)) {
+        document.getElementById('adminLoginEmailError').textContent = 'Please enter a valid email';
+        return;
+      }
+      if (!validatePassword(password)) {
+        document.querySelector('#adminLoginPassword .error').textContent = 'Password must be at least 8 characters';
+        return;
+      }
+      if (!adminType) {
+        alert('Please select an admin type');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${BASE_URL}/admin/login`, {
+          method: 'POST,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, adminType })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          sessionStorage.setItem('token', data.token);
+          await fetchAdminProfile();
+          openTab('adminPanel');
+        } else {
+          alert(data.message || 'Admin login failed');
+        }
+      } catch (error) {
+        alert('Error logging in admin: ' + error.message);
+      }
     }
 
-    function uploadUserImage() {
-      // Placeholder for user image upload logic
-      alert('User image uploaded');
+    async function fetchUserProfile() {
+      try {
+        const token = sessionStorage.getItem('token');
+        const response = await fetch(`${BASE_URL}/user/profile`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const user = await response.json();
+        if (response.ok) {
+          document.getElementById('userPanelEmail').textContent = user.email || 'N/A';
+          document.getElementById('userPanelUsername').textContent = user.username || 'N/A';
+          document.getElementById('userPanelFirstName').textContent = user.firstName || 'N/A';
+          document.getElementById('userPanelLastName').textContent = user.lastName || 'N/A';
+          document.getElementById('userPanelDrivingLicense').textContent = user.drivingLicense || 'N/A';
+          document.getElementById('userPanelNationalID').textContent = user.nationalID || 'N/A';
+          document.getElementById('userPanelNumberPlate').textContent = user.numberPlate || 'N/A';
+          document.getElementById('userPanelAddress').textContent = user.address || 'N/A';
+          document.getElementById('userPanelLocation').textContent = user.location || 'N/A';
+          document.getElementById('userPanelCountry').textContent = user.country || '';
+          document.getElementById('userPanelEmergencyContact').textContent = user.emergencyContact || 'N/A';
+          document.getElementById('userPanelRelatedEmergencyContact').textContent = user.relatedEmergencyContact || 'N/A';
+          document.getElementById('userPanelLatitude').valueContent = user.latitude || 'N/A';
+          document.getElementById('userPanelLongitude').valueContent = user.longitude || 'N/A';
+        } else {
+          alert('Failed to fetch user profile: ' + user.message);
+        }
+      } catch (error) {
+        alert('Error fetching user profile: ' + error.message);
+      }
     }
 
-    function uploadAdminImage() {
-      // Placeholder for admin image upload logic
-      alert('Admin image uploaded');
+    async function fetchAdminProfile() {
+      try {
+        const token = sessionStorage.getItem('token');
+        const response = await fetch(`${BASE_URL}/admin/profile`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const admin = await response.json();
+        if (response.ok) {
+          document.getElementById('adminPanelEmail').textContent = admin.email || 'N/A';
+          document.getElementById('adminUsernameEmail').textContent = admin.username || 'N/A';
+          document.getElementById('adminPanelType').textContent = admin.adminType || 'N/A';
+          document.getElementById('adminPanelCountry').textContent = admin.country || 'N/A';
+          document.getElementById('adminPanelThana').value = admin.thana || 'N/A';
+          document.getElementById('adminPanelEmergencyResponse').textContent = admin.emergencyResponse || 'N/A';
+          document.getElementById('adminPanelServiceInfo').textContent = admin.serviceInfo || 'N/A';
+          document.getElementById('adminPanelLatitude').value = admin.latitude || 'N/A';
+          document.getElementById('adminPanelLongitude').value = admin.longitude || 'N/A';
+        } else {
+          alert('Failed to fetch admin profile: ' + admin.message);
+        }
+      } catch (error) {
+        alert('Error fetching admin profile: ' + error.message);
+      }
+    }
+
+    async function changeUserPassword() {
+      const newPassword = document.getElementById('userNewPassword').value;
+      
+      if (!validatePassword(newPassword)) {
+        document.querySelector('.Id#userNewPassword .error').textContent = 'New password must be at least 8 characters';
+        return;
+      }
+
+      try {
+        const token = sessionStorage.getItem('token');
+        const response = await fetch(`${BASE_URL}/user/updatePassword`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ${token}' },
+          body: JSON.stringify({ newPassword: newPassword })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          alert('User password updated successfully');
+        } else {
+          alert(data.message || 'Failed to update password');
+        }
+      } catch (error) {
+        alert('Error updating password: error' + error.message);
+      }
+    }
+
+    async function changeAdminPassword() {
+      const newPassword = document.getElementById('adminNewPassword').value;
+
+      if (!validatePassword(newPassword)) {
+        document.querySelector('#adminNewPassword .error').textContent = 'New password must be at least 8 characters';
+        return;
+      }
+
+      try {
+        const token = sessionStorage.getItem('token');
+        const response = await fetch(`${BASE_URL}/admin/updatePassword`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ${token}' },
+          body: JSON.stringify({ newPassword })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          alert('Admin password updated successfully');
+        } else {
+          alert(data.message || 'Failed to update admin password');
+        }
+      } catch (error) {
+        alert('Error updating admin password: ' + error.message);
+      }
+    }
+
+    async function uploadUserImage() {
+      const file = document.getElementById('userProfileImage').files[0];
+      
+      if (!file) {
+        alert('Please select an a image to upload');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      try {
+        const token = sessionStorage.getItem('token');
+        const response = await fetch(`${BASE_URL}/user/profile/image`,`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+        const data = await response.json();
+        if (response.ok) {
+          alert('User profile image uploaded successfully');
+        } else {
+          alert(data.message || 'Failed to upload image');
+        }
+      } catch (error) {
+        alert('Error uploading user image: ' + error.message);
+      }
+    }
+
+    async function uploadAdminImage() {
+      const file = document.getElementById('adminProfileImage').files[0];
+      
+      if (!file) {
+        alert('Please select an image');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      try {
+        const token = sessionStorage.getItem('token');
+        const response = await fetch(`${BASE_URL}/admin/profile/image`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+        const data = await response.json();
+        if (response.ok) {
+          alert('Admin profile image uploaded successfully');
+        } else {
+          alert(data.message || 'Failed to upload admin image');
+        }
+      } catch (error) {
+        alert('Error uploading admin image: ' + error.message);
+      }
     }
 
     function logout() {
-      // Placeholder for logout logic
-      alert('Logged out');
+      sessionStorage.removeItem('token');
+      alert('Logged out successfully');
       openTab('login');
     }
+
+    // Initialize dropdowns on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      populateDropdowns();
+    });
   </script>
 </body>
 </html>
