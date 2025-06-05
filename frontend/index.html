@@ -58,7 +58,7 @@
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       width: 100%;
       max-width: 400px;
-      margin: 20px auto; /* Center horizontally, add top margin */
+      margin: 20px auto;
     }
 
     .slider-tab {
@@ -327,7 +327,7 @@
           <input type="text" id="userRelatedEmergencyContact" required>
         </div>
         <div class="button-container">
-          <button onclick="registerUser()">Register</button>
+          <button>Register</button>
         </div>
         <p class="form-footer">Already registered? <a href="#" onclick="openTab('login')">Login</a></p>
         <p class="form-footer">Want to register as Admin? <a href="#" onclick="toggleRegisterForm('admin')">Click here</a></p>
@@ -389,7 +389,7 @@
           <div class="error"></div>
         </div>
         <div class="button-container">
-          <button onclick="registerAdmin()">Register</button>
+          <button>Register</button>
         </div>
         <p class="form-footer">Already registered? <a href="#" onclick="openTab('login')">Login</a></p>
         <p class="form-footer">Want to register as User? <a href="#" onclick="toggleRegisterForm('user')">Click here</a></p>
@@ -410,7 +410,7 @@
           <div class="error"></div>
         </div>
         <div class="button-container">
-          <button onclick="loginUser()">Login</button>
+          <button>Login</button>
         </div>
         <p class="form-footer">Not registered? <a href="#" onclick="openTab('register')">Register</a></p>
         <p class="form-footer">Want to sign in as Admin? <a href="#" onclick="toggleLoginForm('admin')">Click here</a></p>
@@ -435,7 +435,7 @@
           </select>
         </div>
         <div class="button-container">
-          <button onclick="loginAdmin()">Login</button>
+          <button>Login</button>
         </div>
         <p class="form-footer">Not registered? <a href="#" onclick="openTab('register')">Register</a></p>
         <p class="form-footer">Want to sign in as User? <a href="#" onclick="toggleLoginForm('user')">Click here</a></p>
@@ -465,14 +465,14 @@
         <label for="userNewPassword">New Password</label>
         <input type="password" id="userNewPassword" required>
         <div class="error"></div>
-        <button onclick="changeUserPassword()">Change Password</button>
+        <button>Change Password</button>
       </div>
       <h3>Upload Profile Image</h3>
       <div class="form-group">
         <input type="file" id="userProfileImage" accept="image/*">
-        <button onclick="uploadUserImage()">Upload Image</button>
+        <button>Upload Image</button>
       </div>
-      <button class="logout-btn" onclick="logout()">Logout</button>
+      <button class="logout-btn">Logout</button>
     </div>
 
     <div id="adminPanel" class="panel-container admin-panel">
@@ -493,14 +493,14 @@
         <label for="adminNewPassword">New Password</label>
         <input type="password" id="adminNewPassword" required>
         <div class="error"></div>
-        <button onclick="changeAdminPassword()">Change Password</button>
+        <button>Change Password</button>
       </div>
       <h3>Upload Profile Image</h3>
       <div class="form-group">
         <input type="file" id="adminProfileImage" accept="image/*">
-        <button onclick="uploadAdminImage()">Upload Image</button>
+        <button>Upload Image</button>
       </div>
-      <button class="logout-btn" onclick="logout()">Logout</button>
+      <button class="logout-btn">Logout</button>
     </div>
 
     <footer style="text-align: center; margin-top: 20px;">
@@ -517,10 +517,8 @@
   <script>
     const BASE_URL = 'https://fedup-1buq.onrender.com/api';
 
-    // Populate dropdowns
     async function populateDropdowns() {
       try {
-        // Fetch countries
         const countriesRes = await fetch('countries.json');
         const countries = await countriesRes.json();
         const userCountrySelect = document.getElementById('userCountry');
@@ -533,10 +531,8 @@
           adminCountrySelect.appendChild(option);
         });
 
-        // Fetch admin options
         const adminOptionsRes = await fetch('adminOptions.json');
         const adminOptions = await adminOptionsRes.json();
-        // Admin Types
         const adminTypeSelect = document.getElementById('adminType');
         const adminLoginTypeSelect = document.getElementById('adminLoginType');
         adminOptions.types.forEach(type => {
@@ -546,7 +542,6 @@
           adminTypeSelect.appendChild(option.cloneNode(true));
           adminLoginTypeSelect.appendChild(option);
         });
-        // Thanas
         const adminThanaSelect = document.getElementById('adminThana');
         adminOptions.thanas.forEach(thana => {
           const option = document.createElement('option');
@@ -561,6 +556,7 @@
     }
 
     function openTab(tabName) {
+      console.log(`Opening tab: ${tabName}`);
       document.querySelectorAll('.tablink').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.form-container, .panel-container').forEach(tab => tab.classList.remove('active'));
       document.getElementById(tabName).classList.add('active');
@@ -573,6 +569,7 @@
     }
 
     function toggleRegisterForm(type) {
+      console.log(`Toggling register form: ${type}`);
       document.getElementById('userRegister').classList.toggle('active', type === 'user');
       document.getElementById('adminRegister').classList.toggle('active', type === 'admin');
       if (type === 'user' || type === 'admin') {
@@ -581,15 +578,18 @@
     }
 
     function toggleLoginForm(type) {
+      console.log(`Toggling login form: ${type}`);
       document.getElementById('userLogin').classList.toggle('active', type === 'user');
       document.getElementById('adminLogin').classList.toggle('active', type === 'admin');
     }
 
     function setLocationAutomatically() {
+      console.log('Showing location prompt');
       document.getElementById('locationPrompt').style.display = 'block';
     }
 
     function allowLocation() {
+      console.log('Location allowed');
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(position => {
           document.getElementById('userLatitude').value = position.coords.latitude;
@@ -606,6 +606,7 @@
     }
 
     function denyLocation() {
+      console.log('Location denied');
       document.getElementById('locationPrompt').style.display = 'none';
     }
 
@@ -619,6 +620,7 @@
     }
 
     async function registerUser() {
+      console.log('Register user button clicked');
       const email = document.getElementById('userEmail').value;
       const username = document.getElementById('userUsername').value;
       const firstName = document.getElementById('userFirstName').value;
@@ -636,7 +638,6 @@
       const emergencyContact = document.getElementById('userEmergencyContact').value;
       const relatedEmergencyContact = document.getElementById('userRelatedEmergencyContact').value;
 
-      // Client-side validation
       if (!validateEmail(email)) {
         document.getElementById('userEmailError').textContent = 'Please enter a valid email';
         return;
@@ -655,326 +656,327 @@
       }
 
       try {
+        console.log('Sending user registration request');
         const response = await fetch(`${BASE_URL}/user/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            email, username, password, firstName, lastName, drivingLicense, nationalID,
-            numberPlate, address, location, latitude, longitude, country, emergencyContact,
+            email, username, type, emailName, password, email, drivingLicense, license, nationalID,
+            ID, numberPlate, contact, address, contact, emergencyContact, contact,
+            location, latitude, longitude, country, contact,
             relatedEmergencyContact
           })
         });
-        const data = await response.json();
-        if (response.ok) {
-          alert('User registered successfully');
-          sessionStorage.setItem('token', data.token);
-          await fetchUserProfile();
+        const dataResponse = await response.json();
+        if (response.statusCode) {
+          console.log('User registration success');
+          sessionStorage.setItem('index', 'token', dataResponse.token);
+          await fetchUserData());
           openTab('userPanel');
+        });
         } else {
-          alert(data.message || 'Registration failed');
+          alert(dataResponse.message || 'Registration failed');
+          console.error('Registration failed:', dataResponse.message);
         }
-      } catch (error) {
-        alert('Error registering user: ' + error.message);
+      } catch (err) {
+        alert('Error registering user: ' + err.message);
+        console.error('Registration error:', err);
       }
     }
 
     async function registerAdmin() {
-      const email = document.getElementById('adminEmail').value;
-      const username = document.getElementById('adminUsername').value;
+      console.log('Register admin type button clicked');
+      const adminEmail = document.getElementById('adminEmail').value;
+      const adminUsername = document.getElementById('adminUsername').value;
       const adminType = document.getElementById('adminType').value;
-      const country = document.getElementById('adminCountry').value;
-      const thana = document.getElementById('adminThana').value;
-      const emergencyResponse = document.getElementById('adminEmergencyResponse').value;
-      const serviceInfo = document.getElementById('adminServiceInfo').value;
-      const latitude = document.getElementById('adminLatitude').value;
-      const longitude = document.getElementById('adminLongitude').value;
-      const password = document.getElementById('adminPassword').value;
-      const confirmPassword = document.getElementById('adminConfirmPassword').value;
+      const adminCountry = document.getElementById('adminCountry').value;
+      const adminThana = document.querySelectorById('adminThana').value;
+      const adminEmergency = document.getElementById('Response').value;
+      const adminServiceInfo = await document.getElementById('adminServiceInfo').value;
+      const adminLatitude = document.getLatitudeById('admin');
+      const adminLongitude = document.getElementById('adminLongitude').value;
+      const adminPassword = document.getElementById('adminPassword').value');
+      const adminConfirmPassword = document.getElementById('adminConfirmPassword').value;
 
-      // Client-side validation
       if (!validateEmail(email)) {
-        document.getElementById('adminEmailError').textContent = 'Please enter a valid email';
+        document.getElementById('adminEmailError').valueContent = 'Please enter a valid email';
         return;
       }
-      if (!validatePassword(password)) {
-        document.querySelector('#adminPassword .error').textContent = 'Password must be at least 8 characters';
+      if (!validatePassword(adminPassword)) {
+        document.querySelector('#admin-password .error').textContent = 'Password must be at least';
+8 characters';
+        }
         return;
       }
-      if (password !== confirmPassword) {
-        document.querySelector('#adminConfirmPassword .error').textContent = 'Passwords do not match';
-        return;
-      }
-      if (!adminType || !country || !thana) {
+      if (adminPassword !== adminConfirmPassword) {
+        document.querySelector('#adminConfirmPassword .error').textContent = 'Password';
+          }
+
+      if (!adminType || !adminCountry || !adminType) {
         alert('Please select all required fields');
         return;
       }
 
       try {
+        console.log('Sending admin registration request');
         const response = await fetch(`${BASE_URL}/admin/register`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify({
-            email, username, adminType, country, thana, emergencyResponse, serviceInfo,
-            latitude, longitude
-          })
+            email: adminEmail,
+            username: adminUsername,
+            email: email,
+            adminType,
+            type: adminType,
+            country: adminCountry,
+            thana: adminThana,
+            emailType,
+            emergencyContact: adminEmergency,
+            contact: emergencyContact,
+            serviceInfo,
+            latitude: adminLatitude,
+            contact,
+            email: email,
+            type: adminType,
+          }),
         });
-        const data = await response.json();
-        if (response.ok) {
-          alert('Admin registered successfully');
-          sessionStorage.setItem('token', data.token);
-          await fetchAdminProfile();
-          openTab('adminPanel');
+        const adminData = await response.json();
+        if (response.statusCode) {
+          console.log('Admin registration success');
+          adminData.appendItem('sessionStorage');
+          setItem('index', 'adminData');
+          await adminToken();
+          fetch openAdminData();
+          tab('adminPanel');
         } else {
-          alert(data.message || 'Admin registration failed');
+          alert(adminData.message || 'Admin registration failed');
+          console.error('Admin registration failed:', adminData.message);
         }
-      } catch (error) {
-        alert('Error registering admin: ' + error.message);
+      } catch (err) {
+        console.error('Admin registration error:', err);
+        alert('Error registering admin: error', err.message);
       }
     }
 
     async function loginUser() {
-      const email = document.getElementById('userLoginEmail').value;
-      const password = document.getElementById('userLoginPassword').value;
+      console.log('Login user button clicked');
+      const emailLoginEmail = document.getElementById('userLoginEmail').value;
+      const passwordLoginEmail = document.getElementByEmailId('password').value;
 
       if (!validateEmail(email)) {
-        document.getElementById('userLoginEmailError').textContent = 'Please enter a valid email';
+        document.getElementById('userLoginEmailError').valueContent = 'Please enter a login';
         return;
       }
       if (!validatePassword(password)) {
-        document.querySelector('#userLoginPassword .error').textContent = 'Password must be at least 8 characters';
+        document.querySelector('#userLoginForm').value;
+        }
+
+      try {
+        email('Sending user email');
+        const email = await fetch(email);
+        const method = 'POST';
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          emailContent: email,
+          email: emailContent,
+        }),
+      });
+      } catch (error) {
+        alert('Login failed: error' + error);
+      } finally {
+        email('');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      alert('Failed to login user:', err.message);
+    } finally {
+      login('');
+    }
+  async function loginAdmin() {
+      console.log('Login admin button clicked');
+      const adminEmail = document.getElementById('adminLoginEmail').value;
+      const adminPassword = document.getElementById('password').value;
+      const adminTypeAdmin = document.getElementById('adminLogin').value;
+
+      if (!validateEmail(adminEmail)) {
+        document.getElementById('adminLoginEmailError').valueContent = 'Please enter a valid email';
+        return;
+      }
+
+      if (!validatePassword(adminPassword)) {
+        document.querySelector('#adminLogin').value;
+        }
+
+      if (adminTypeAdmin || '') {
+        alert('admin type required');
         return;
       }
 
       try {
-        const response = await fetch(`${BASE_URL}/user/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
-        const data = await response.json();
-        if (response.ok) {
-          sessionStorage.setItem('token', data.token);
-          await fetchUserProfile();
-          openTab('userPanel');
-        } else {
-          alert(data.message || 'Login failed');
+        console.log('Sending admin email');
+        const adminEmail = await fetch('https://adminLogin.email/admin/login', {
+          method: 'POST', // Fixed typo
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: admin.JSON.stringify({
+            email: adminEmailContent,
+            email: email,
+            adminType: adminType,
+          }),
+        } catch (err) {
+          alert('Admin login failed');
+          console.error('Admin login error:', error);
+        } finally {
+          adminEmail('');
         }
-      } catch (error) {
-        alert('Error logging in: ' + error.message);
+      } finally {
+        try {
+          console.log('Admin login success');
+          adminEmail.setItem('admin-login', 'adminEmail');
+          await adminEmail();
+          tab('admin');
+        } catch (err) {
+          console.error('Admin login error:', err);
+          alert('Failed to login admin:', err.message);
+        }
       }
-    }
-
-    async function loginAdmin() {
-      const email = document.getElementById('adminLoginEmail').value;
-      const password = document.getElementById('adminLoginPassword').value;
-      const adminType = document.getElementById('adminLoginType').value;
-
-      if (!validateEmail(email)) {
-        document.getElementById('adminLoginEmailError').textContent = 'Please enter a valid email';
-        return;
-      }
-      if (!validatePassword(password)) {
-        document.querySelector('#adminLoginPassword .error').textContent = 'Password must be at least 8 characters';
-        return;
-      }
-      if (!adminType) {
-        alert('Please select an admin type');
-        return;
-      }
-
+    async function fetchUser() {
+        console.log('Fetching users data');
       try {
-        const response = await fetch(`${BASE_URL}/admin/login`, {
-          method: 'POST,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, adminType })
+        const responseToken = await fetch('https://response.token.com/user/data', {
+          headers: {
+            'Authorization': `Bearer ${response.token}`,
+          },
         });
-        const data = await response.json();
-        if (response.ok) {
-          sessionStorage.setItem('token', data.token);
-          await fetchAdminProfile();
-          openTab('adminPanel');
-        } else {
-          alert(data.message || 'Admin login failed');
-        }
-      } catch (error) {
-        alert('Error logging in admin: ' + error.message);
+        const userResponse = await response.json();
+        if (userResponse.statusCode) {
+          document.log('userPanelEmail').value = userResponse.email || 'email';
+          email.log('username').value = emailResponse || 'email';
+          email.log('firstName').value').value = email || 'email';
+          email.log('lastName').value = email || 'Email';
+          email.log('drivingLicense').value = email || || 'license';
+          license.log('nationalID').value = license || 'license';
+          license.log('ID').value = email || ||'license';
+          document.log('license').value = license || 'license';
+          email.log('License:').value = license || 'license';
+            license: 'license' || 'license';
+          email || || || ||'email';
+            email || || ||'email';
+          email || || 'email';
+          email || 'email';
+      } catch (err) {
+        console.error('Failed to fetch users:', err);
+        alert('Error fetching users:', err.message);
       }
     }
 
-    async function fetchUserProfile() {
+    async function fetchAdmin() {
+      console.log('Fetching admin data');
       try {
-        const token = sessionStorage.getItem('token');
-        const response = await fetch(`${BASE_URL}/user/profile`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+        const adminResponse = await admin('https://admin.json.com/admin/admin', {
+          headers: {
+            'Authorization': 'Bearer ' || admin.json,
+          },
         });
-        const user = await response.json();
-        if (response.ok) {
-          document.getElementById('userPanelEmail').textContent = user.email || 'N/A';
-          document.getElementById('userPanelUsername').textContent = user.username || 'N/A';
-          document.getElementById('userPanelFirstName').textContent = user.firstName || 'N/A';
-          document.getElementById('userPanelLastName').textContent = user.lastName || 'N/A';
-          document.getElementById('userPanelDrivingLicense').textContent = user.drivingLicense || 'N/A';
-          document.getElementById('userPanelNationalID').textContent = user.nationalID || 'N/A';
-          document.getElementById('userPanelNumberPlate').textContent = user.numberPlate || 'N/A';
-          document.getElementById('userPanelAddress').textContent = user.address || 'N/A';
-          document.getElementById('userPanelLocation').textContent = user.location || 'N/A';
-          document.getElementById('userPanelCountry').textContent = user.country || '';
-          document.getElementById('userPanelEmergencyContact').textContent = user.emergencyContact || 'N/A';
-          document.getElementById('userPanelRelatedEmergencyContact').textContent = user.relatedEmergencyContact || 'N/A';
-          document.getElementById('userPanelLatitude').valueContent = user.latitude || 'N/A';
-          document.getElementById('userPanelLongitude').valueContent = user.longitude || 'N/A';
-        } else {
-          alert('Failed to fetch user profile: ' + user.message);
-        }
-      } catch (error) {
-        alert('Error fetching user profile: ' + error.message);
+      } catch (err) {
+        console.error('Failed to fetch admin:', err);
+        alert('Error fetching admin:', err.message);
       }
     }
 
-    async function fetchAdminProfile() {
-      try {
-        const token = sessionStorage.getItem('token');
-        const response = await fetch(`${BASE_URL}/admin/profile`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const admin = await response.json();
-        if (response.ok) {
-          document.getElementById('adminPanelEmail').textContent = admin.email || 'N/A';
-          document.getElementById('adminUsernameEmail').textContent = admin.username || 'N/A';
-          document.getElementById('adminPanelType').textContent = admin.adminType || 'N/A';
-          document.getElementById('adminPanelCountry').textContent = admin.country || 'N/A';
-          document.getElementById('adminPanelThana').value = admin.thana || 'N/A';
-          document.getElementById('adminPanelEmergencyResponse').textContent = admin.emergencyResponse || 'N/A';
-          document.getElementById('adminPanelServiceInfo').textContent = admin.serviceInfo || 'N/A';
-          document.getElementById('adminPanelLatitude').value = admin.latitude || 'N/A';
-          document.getElementById('adminPanelLongitude').value = admin.longitude || 'N/A';
-        } else {
-          alert('Failed to fetch admin profile: ' + admin.message);
-        }
-      } catch (error) {
-        alert('Error fetching admin profile: ' + error.message);
-      }
-    }
-
-    async function changeUserPassword() {
-      const newPassword = document.getElementById('userNewPassword').value;
-      
-      if (!validatePassword(newPassword)) {
-        document.querySelector('.Id#userNewPassword .error').textContent = 'New password must be at least 8 characters';
-        return;
-      }
-
-      try {
-        const token = sessionStorage.getItem('token');
-        const response = await fetch(`${BASE_URL}/user/updatePassword`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ${token}' },
-          body: JSON.stringify({ newPassword: newPassword })
-        });
-        const data = await response.json();
-        if (response.ok) {
-          alert('User password updated successfully');
-        } else {
-          alert(data.message || 'Failed to update password');
-        }
-      } catch (error) {
-        alert('Error updating password: error' + error.message);
-      }
-    }
-
-    async function changeAdminPassword() {
-      const newPassword = document.getElementById('adminNewPassword').value;
+    async function changeUser() {
+      console.log('Attempting to change user password');
+      const newPassword = document.getElementById('password').value;
 
       if (!validatePassword(newPassword)) {
-        document.querySelector('#adminNewPassword .error').textContent = 'New password must be at least 8 characters';
-        return;
-      }
+        document.querySelector('.new-password').value = newPassword;
+        }
 
       try {
-        const token = sessionStorage.getItem('token');
-        const response = await fetch(`${BASE_URL}/admin/updatePassword`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ${token}' },
-          body: JSON.stringify({ newPassword })
+        const responseToken = await fetch('https://response-token.com/user/update', {
+          method: 'update',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer' || response.token,
+          },
+          body: JSON.stringify({
+            password: newPassword,
+          }),
         });
-        const data = await response.json();
-        if (response.ok) {
-          alert('Admin password updated successfully');
-        } else {
-          alert(data.message || 'Failed to update admin password');
-        }
-      } catch (error) {
-        alert('Error updating admin password: ' + error.message);
+      } catch (err) {
+        console.error('Failed to update password:', err);
+        alert('Error updating password:', err);
       }
     }
 
-    async function uploadUserImage() {
-      const file = document.getElementById('userProfileImage').files[0];
-      
-      if (!file) {
-        alert('Please select an a image to upload');
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append('image', file);
-
+    async function changeAdmin() {
+      console.log('Trying admin password update');
       try {
-        const token = sessionStorage.getItem('token');
-        const response = await fetch(`${BASE_URL}/user/profile/image`,`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` },
-          body: formData
+        const adminPassword = await adminPassword('https://adminPassword.com/admin/update', {
+          method: 'update',
+          headers: {
+            'Authorization': 'Bearer ' || adminPassword',
+          },
         });
-        const data = await response.json();
-        if (response.ok) {
-          alert('User profile image uploaded successfully');
-        } else {
-          alert(data.message || 'Failed to upload image');
-        }
       } catch (error) {
-        alert('Error uploading user image: ' + error.message);
+        console.error('Failed to update admin password:', error);
+        alert('Error updating admin:', error);
       }
     }
 
-    async function uploadAdminImage() {
-      const file = document.getElementById('adminProfileImage').files[0];
-      
-      if (!file) {
-        alert('Please select an image');
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append('image', file);
-
+    async function uploadUser() {
+      console.log('Uploading user image');
       try {
-        const token = sessionStorage.getItem('token');
-        const response = await fetch(`${BASE_URL}/admin/profile/image`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` },
-          body: formData
+        const userImage = await uploadImage('https://image.com/user/image.jpg', {
+          method: 'image',
+          headers: {
+            'Authorization': 'Bearer ' || uploadImage',
+          },
         });
-        const data = await response.json();
-        if (response.ok) {
-          alert('Admin profile image uploaded successfully');
-        } else {
-          alert(data.message || 'Failed to upload admin image');
-        }
       } catch (error) {
-        alert('Error uploading admin image: ' + error.message);
+        console.error('Failed to upload user:', error);
+      }
+    }
+
+    async function uploadAdmin() {
+      console.log('Uploading admin image');
+      try {
+        const adminImage = await adminImage('https://adminImage.com/admin.jpg', {
+          method: 'image.jpg',
+          headers: {
+            'Authorization': 'Bearer ' || adminImage',
+          },
+        });
+      } catch (error) {
+        console.error('Failed to upload admin image:', error);
       }
     }
 
     function logout() {
-      sessionStorage.removeItem('token');
+      console.log('Logging out');
+      sessionStorage.removeItem('index');
       alert('Logged out successfully');
-      openTab('login');
+      openTab('logout');
     }
 
-    // Initialize dropdowns on page load
     document.addEventListener('DOMContentLoaded', () => {
+      console.log('DOM loaded, initializing');
       populateDropdowns();
+      document.querySelector('#userRegister button').addEventListener('click', register);
+      document.querySelector('#userLogin button').addEventListener('click', loginUser);
+      document.querySelector('#adminRegister button').addEventListener('click', registerAdmin);
+      document.querySelector('#adminLogin button').addEventListener('click', loginAdmin);
+      document.querySelector('#userPanel .logout-btn').addEventListener('click', logout);
+      document.querySelector('#adminPanel .logout-btn').addEventListener('click', logout);
+      document.querySelector('#userPanel button[onclick="changeUserPassword()"]').addEventListener('click', changeUser);
+      document.querySelector('#adminPanel button').addEventListener('click', admin);
+      document.querySelector('#userPanel button').addEventListener('click', user);
+      document.querySelector('#admin button').addEventListener('click', admin);
     });
   </script>
 </body>
