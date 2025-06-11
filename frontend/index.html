@@ -1,4 +1,43 @@
-<!DOCTYPE html>
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -116,6 +155,41 @@
     }
     #geoModal button {
       margin: 10px;
+    }
+    #adminPanel {
+      background-color: #2c2f33;
+      color: #e0e0e0;
+      padding: 20px;
+      border-radius: 12px;
+    }
+    .deck {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    .card {
+      background-color: #40444b;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    .card h3 {
+      color: #e0e0e0;
+    }
+    .card p {
+      margin: 10px 0;
+    }
+    .card form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .card input, .card button {
+      background-color: #ffffff;
+      color: #333;
+    }
+    .card button:hover {
+      background-color: #1557b0;
     }
     @media (max-width: 600px) {
       .container {
@@ -297,6 +371,7 @@
 
     <div id="userPanel" class="section">
       <h2>User Panel</h2>
+      <button onclick="logout()">Logout</button>
       <div id="userData">
         <p><strong>Email:</strong> <span id="userEmailDisplay"></span></p>
         <p><strong>Username:</strong> <span id="userUsernameDisplay"></span></p>
@@ -333,33 +408,41 @@
 
     <div id="adminPanel" class="section">
       <h2>Admin Panel</h2>
-      <div id="adminData">
-        <p><strong>Email:</strong> <span id="adminEmailDisplay"></span></p>
-        <p><strong>Username:</strong> <span id="adminUsernameDisplay"></span></p>
-        <p><strong>Admin Type:</strong> <span id="adminTypeDisplay"></span></p>
-        <p><strong>Country:</strong> <span id="adminCountryDisplay"></span></p>
-        <p><strong>Thana:</strong> <span id="adminThanaDisplay"></span></p>
-        <p><strong>Emergency Response:</strong> <span id="adminEmergencyResponseDisplay"></span></p>
-        <p><strong>Service Info:</strong> <span id="adminServiceInfoDisplay"></span></p>
-        <p><strong>Latitude:</strong> <span id="adminLatitudeDisplay"></span></p>
-        <p><strong>Longitude:</strong> <span id="adminLongitudeDisplay"></span></p>
+      <button onclick="logout()">Logout</button>
+      <div class="deck">
+        <div class="card" id="adminData">
+          <h3>Admin Information</h3>
+          <p><strong>Email:</strong> <span id="adminEmailDisplay"></span></p>
+          <p><strong>Username:</strong> <span id="adminUsernameDisplay"></span></p>
+          <p><strong>Admin Type:</strong> <span id="adminTypeDisplay"></span></p>
+          <p><strong>Country:</strong> <span id="adminCountryDisplay"></span></p>
+          <p><strong>Thana:</strong> <span id="adminThanaDisplay"></span></p>
+          <p><strong>Emergency Response:</strong> <span id="adminEmergencyResponseDisplay"></span></p>
+          <p><strong>Service Info:</strong> <span id="adminServiceInfoDisplay"></span></p>
+          <p><strong>Latitude:</strong> <span id="adminLatitudeDisplay"></span></p>
+          <p><strong>Longitude:</strong> <span id="adminLongitudeDisplay"></span></p>
+        </div>
+
+        <div class="card">
+          <h3>Change Password</h3>
+          <form id="adminChangePasswordForm">
+            <label for="adminNewPassword">New Password</label>
+            <input type="password" name="newPassword" required minlength="8">
+            <span class="error" id="adminChangePasswordError">Password must be at least 8 characters</span>
+            <button type="submit">Change Password</button>
+            <span class="error" id="adminChangePasswordResult"></span>
+          </form>
+        </div>
+
+        <div class="card">
+          <h3>Upload Profile Image</h3>
+          <form id="adminUploadImageForm" enctype="multipart/form-data">
+            <input type="file" name="image" accept="image/*">
+            <button type="submit">Upload Image</button>
+            <span class="error" id="adminUploadImageError"></span>
+          </form>
+        </div>
       </div>
-
-      <h3>Change Password</h3>
-      <form id="adminChangePasswordForm">
-        <label for="adminNewPassword">New Password</label>
-        <input type="password" name="newPassword" required minlength="8">
-        <span class="error" id="adminChangePasswordError">Password must be at least 8 characters</span>
-        <button type="submit">Change Password</button>
-        <span class="error" id="adminChangePasswordResult"></span>
-      </form>
-
-      <h3>Upload Profile Image</h3>
-      <form id="adminUploadImageForm" enctype="multipart/form-data">
-        <input type="file" name="image" accept="image/*">
-        <button type="submit">Upload Image</button>
-        <span class="error" id="adminUploadImageError"></span>
-      </form>
     </div>
 
     <footer>© 2025 RegistrationSystem. All rights reserved.</footer>
@@ -368,13 +451,14 @@
   <div id="geoModal" class="section" style="display: none;">
     <p>Allow us to access your location to auto-fill latitude and longitude?</p>
     <button onclick="allowGeo()">Allow</button>
-    <button onclick="denyGeo()">Deny</button>
+    <button onclick="submit">Deny</button>
   </div>
 
   <script type="text/javascript">
     var gk_isXlsx = false;
     var gk_xlsxFileLookup = {};
     var gk_fileData = {};
+    function submit() { ...; }
     function filledCell(cell) {
       return cell !== '' && cell != null;
     }
@@ -385,8 +469,8 @@
           var firstSheetName = workbook.SheetNames[0];
           var worksheet = workbook.Sheets[firstSheetName];
 
-          // Convert sheet to JSON to filter blank rows
-          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+          // Convert sheet to JSON to filter out blank rows
+          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: header, blankrows: false, defval: '' });
           // Filter out blank rows (rows where all cells are empty, null, or undefined)
           var filteredData = jsonData.filter(row => row.some(filledCell));
 
@@ -613,12 +697,20 @@
       }
     });
 
-    // Handle User Login with improved error handling
+    // Handle User Login with improved error handling and email validation
     document.getElementById('userLoginForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const formData = new FormData(e.target);
       const data = Object.fromEntries(formData);
       const errorElement = document.getElementById('userLoginError');
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(data.email)) {
+        errorElement.textContent = 'Please enter a valid email address.';
+        errorElement.style.display = 'block';
+        return;
+      }
 
       try {
         console.log('Attempting user login with data:', data);
@@ -643,7 +735,7 @@
         }
       } catch (err) {
         console.error('Error during user login:', err.message);
-        errorElement.textContent = `Failed to connect to the server: ${err.message}. Please check if https://fedup-1bug.onrender.com is running and try again.`;
+        errorElement.textContent = `Failed to connect to the server: ${err.message}. Please check if https://fedup-1buq.onrender.com is running and try again.`;
         errorElement.style.display = 'block';
       }
     });
@@ -678,7 +770,7 @@
         }
       } catch (err) {
         console.error('Error during admin login:', err.message);
-        errorElement.textContent = `Failed to connect to the server: ${err.message}. Please check if https://fedup-1bug.onrender.com is running and try again.`;
+        errorElement.textContent = `Failed to connect to the server: ${err.message}. Please check if https://fedup-1buq.onrender.com is running and try again.`;
         errorElement.style.display = 'block';
       }
     });
@@ -708,13 +800,10 @@
           document.getElementById('userLatitudeDisplay').textContent = user.latitude || '';
           document.getElementById('userLongitudeDisplay').textContent = user.longitude || '';
         } else {
-          document.getElementById('userLoginError').textContent = 'User not found';
-          document.getElementById('userLoginError').style.display = 'block';
+          console.error('Error fetching user data:', await response.text());
         }
       } catch (err) {
-        console.error('Error fetching user data:', err.message);
-        document.getElementById('userLoginError').textContent = `Failed to fetch user data: ${err.message}.`;
-        document.getElementById('userLoginError').style.display = 'block';
+        console.error('Error during fetchUserData:', err);
       }
     }
 
@@ -738,13 +827,10 @@
           document.getElementById('adminLatitudeDisplay').textContent = admin.latitude || '';
           document.getElementById('adminLongitudeDisplay').textContent = admin.longitude || '';
         } else {
-          document.getElementById('adminLoginError').textContent = 'Admin not found';
-          document.getElementById('adminLoginError').style.display = 'block';
+          console.error('Error fetching admin data:', await response.text());
         }
       } catch (err) {
-        console.error('Error fetching admin data:', err.message);
-        document.getElementById('adminLoginError').textContent = `Failed to fetch admin data: ${err.message}.`;
-        document.getElementById('adminLoginError').style.display = 'block';
+        console.error('Error during fetchAdminData:', err);
       }
     }
 
@@ -753,21 +839,33 @@
       e.preventDefault();
       const formData = new FormData(e.target);
       const data = Object.fromEntries(formData);
+      const email = document.getElementById('userEmailDisplay').textContent;
       const errorElement = document.getElementById('userChangePasswordResult');
+
+      if (!data.newPassword || data.newPassword.length < 8) {
+        errorElement.textContent = 'Password must be at least 8 characters.';
+        errorElement.style.display = 'block';
+        return;
+      }
+
       try {
         const response = await fetch(`${backendUrl}/change-password-user`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: document.getElementById('userEmailDisplay').textContent, newPassword: data.newPassword })
+          body: JSON.stringify({ email, newPassword: data.newPassword })
         });
         const result = await response.text();
-        errorElement.textContent = result;
-        errorElement.style.color = response.ok ? 'green' : '#d93025';
-        errorElement.style.display = 'block';
-        if (response.ok) e.target.reset();
+        if (response.ok) {
+          errorElement.textContent = result;
+          errorElement.style.color = 'green';
+          errorElement.style.display = 'block';
+        } else {
+          errorElement.textContent = result || 'Error changing password';
+          errorElement.style.display = 'block';
+        }
       } catch (err) {
-        console.error('Error changing user password:', err.message);
-        errorElement.textContent = `Failed to change password: ${err.message}.`;
+        console.error('Error during password change:', err.message);
+        errorElement.textContent = `Failed to connect to the server: ${err.message}. Please try again.`;
         errorElement.style.display = 'block';
       }
     });
@@ -777,107 +875,132 @@
       e.preventDefault();
       const formData = new FormData(e.target);
       const data = Object.fromEntries(formData);
+      const email = document.getElementById('adminEmailDisplay').textContent;
+      const admin_type = document.getElementById('adminTypeDisplay').textContent;
       const errorElement = document.getElementById('adminChangePasswordResult');
+
+      if (!data.newPassword || data.newPassword.length < 8) {
+        errorElement.textContent = 'Password must be at least 8 characters.';
+        errorElement.style.display = 'block';
+        return;
+      }
+
       try {
         const response = await fetch(`${backendUrl}/change-password-admin`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            email: document.getElementById('adminEmailDisplay').textContent, 
-            newPassword: data.newPassword, 
-            admin_type: document.getElementById('adminTypeDisplay').textContent 
-          })
+          body: JSON.stringify({ email, newPassword: data.newPassword, admin_type })
         });
         const result = await response.text();
-        errorElement.textContent = result;
-        errorElement.style.color = response.ok ? 'green' : '#d93025';
-        errorElement.style.display = 'block';
-        if (response.ok) e.target.reset();
+        if (response.ok) {
+          errorElement.textContent = result;
+          errorElement.style.color = 'green';
+          errorElement.style.display = 'block';
+        } else {
+          errorElement.textContent = result || 'Error changing password';
+          errorElement.style.display = 'block';
+        }
       } catch (err) {
-        console.error('Error changing admin password:', err.message);
-        errorElement.textContent = `Failed to change password: ${err.message}.`;
+        console.error('Error during password change:', err.message);
+        errorElement.textContent = `Failed to connect to the server: ${err.message}. Please try again.`;
         errorElement.style.display = 'block';
       }
     });
 
-    // Handle User Image Upload
+    // Handle User Upload Image
     document.getElementById('userUploadImageForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const formData = new FormData(e.target);
-      formData.append('email', document.getElementById('userEmailDisplay').textContent);
+      const email = document.getElementById('userEmailDisplay').textContent;
       const errorElement = document.getElementById('userUploadImageError');
+
       try {
         const response = await fetch(`${backendUrl}/upload-image-user`, {
           method: 'POST',
           body: formData
         });
         const result = await response.text();
-        errorElement.textContent = result;
-        errorElement.style.color = response.ok ? 'green' : '#d93025';
-        errorElement.style.display = 'block';
-        if (response.ok) e.target.reset();
+        if (response.ok) {
+          errorElement.textContent = result;
+          errorElement.style.color = 'green';
+          errorElement.style.display = 'block';
+          fetchUserData(email); // Refresh user data to update image
+        } else {
+          errorElement.textContent = result || 'Error uploading image';
+          errorElement.style.display = 'block';
+        }
       } catch (err) {
-        console.error('Error uploading user image:', err.message);
-        errorElement.textContent = `Failed to upload image: ${err.message}.`;
+        console.error('Error during image upload:', err.message);
+        errorElement.textContent = `Failed to connect to the server: ${err.message}. Please try again.`;
         errorElement.style.display = 'block';
       }
     });
 
-    // Handle Admin Image Upload
+    // Handle Admin Upload Image
     document.getElementById('adminUploadImageForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const formData = new FormData(e.target);
-      formData.append('email', document.getElementById('adminEmailDisplay').textContent);
-      formData.append('admin_type', document.getElementById('adminTypeDisplay').textContent);
+      const email = document.getElementById('adminEmailDisplay').textContent;
+      const admin_type = document.getElementById('adminTypeDisplay').textContent;
       const errorElement = document.getElementById('adminUploadImageError');
+
       try {
         const response = await fetch(`${backendUrl}/upload-image-admin`, {
           method: 'POST',
           body: formData
         });
         const result = await response.text();
-        errorElement.textContent = result;
-        errorElement.style.color = response.ok ? 'green' : '#d93025';
-        errorElement.style.display = 'block';
-        if (response.ok) e.target.reset();
+        if (response.ok) {
+          errorElement.textContent = result;
+          errorElement.style.color = 'green';
+          errorElement.style.display = 'block';
+          fetchAdminData(email, admin_type); // Refresh admin data to update image
+        } else {
+          errorElement.textContent = result || 'Error uploading image';
+          errorElement.style.display = 'block';
+        }
       } catch (err) {
-        console.error('Error uploading admin image:', err.message);
-        errorElement.textContent = `Failed to upload image: ${err.message}.`;
+        console.error('Error during image upload:', err.message);
+        errorElement.textContent = `Failed to connect to the server: ${err.message}. Please try again.`;
         errorElement.style.display = 'block';
       }
     });
 
-    // Geolocation
+    // Handle Logout
+    function logout() {
+      // Clear any stored data (e.g., session or localStorage if implemented)
+      localStorage.removeItem('userEmail'); // Example; adjust based on your implementation
+      // Redirect to login section
+      showSection('loginSection');
+    }
+
+    // Geolocation handling
     function allowGeo() {
       if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(position => {
-          document.querySelectorAll('input[name="latitude"]').forEach(input => input.value = position.coords.latitude);
-          document.querySelectorAll('input[name="longitude"]').forEach(input => input.value = position.coords.longitude);
-          document.getElementById('geoModal').style.display = 'none';
-        }, () => {
-          document.getElementById('geoModal').style.display = 'none';
-          const errorElement = document.querySelector('#registerSection .error');
-          errorElement.textContent = 'Geolocation access denied.';
-          errorElement.style.display = 'block';
-        });
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            document.querySelectorAll('input[name="latitude"]').forEach(input => input.value = latitude);
+            document.querySelectorAll('input[name="longitude"]').forEach(input => input.value = longitude);
+            document.getElementById('geoModal').style.display = 'none';
+          },
+          (error) => {
+            console.error('Geolocation error:', error);
+            document.getElementById('geoModal').style.display = 'none';
+          }
+        );
       } else {
+        alert('Geolocation is not supported by this browser.');
         document.getElementById('geoModal').style.display = 'none';
-        const errorElement = document.querySelector('#registerSection .error');
-        errorElement.textContent = 'Geolocation is not supported by this browser.';
-        errorElement.style.display = 'block';
       }
     }
 
-    function denyGeo() {
-      document.getElementById('geoModal').style.display = 'none';
-    }
-
     // Initialize
-    window.onload = () => {
+    document.addEventListener('DOMContentLoaded', () => {
       loadDropdowns();
-      showSection('loginSection');
+      toggleRegisterForm();
       toggleLoginForm();
-    };
+    });
   </script>
 </body>
 </html>
