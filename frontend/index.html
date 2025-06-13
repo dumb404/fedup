@@ -42,7 +42,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Registration and Login System</title>
+  <title id="pageTitle">Login</title>
   <!-- Include SheetJS library for XLSX functionality -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
@@ -57,7 +57,7 @@
       color: #333;
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start;
       min-height: 100vh;
       padding: 20px;
     }
@@ -69,6 +69,14 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       padding: 32px;
       margin: 20px auto;
+    }
+    .main-content {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+    }
+    .panel {
+      flex: 1;
     }
     h2 {
       font-size: 28px;
@@ -117,6 +125,14 @@
     button:hover {
       background-color: #1557b0;
     }
+    .logout-btn {
+      background-color: #d93025;
+      margin-top: 20px;
+      width: 100%;
+    }
+    .logout-btn:hover {
+      background-color: #b3141a;
+    }
     .error {
       color: #d93025;
       font-size: 14px;
@@ -156,6 +172,34 @@
     #geoModal button {
       margin: 10px;
     }
+    .notifications-box {
+      flex: 0 0 300px;
+      margin-left: 20px;
+      background: #fff;
+      border: 2px solid #1a73e8;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      height: fit-content;
+      display: none; /* Hidden by default */
+    }
+    #adminPanel .notifications-box {
+      display: block; /* Show only in adminPanel */
+    }
+    #adminNotifications p {
+      margin: 10px 0;
+      color: #d93025;
+    }
+    @media (max-width: 800px) {
+      .main-content {
+        flex-direction: column;
+      }
+      .notifications-box {
+        margin-left: 0;
+        margin-top: 20px;
+        width: 100%;
+      }
+    }
     @media (max-width: 600px) {
       .container {
         padding: 24px;
@@ -168,245 +212,253 @@
 </head>
 <body>
   <div class="container">
-    <div id="registerSection" class="section">
-      <h2>Register</h2>
-      <select id="registerType" onchange="toggleRegisterForm()">
-        <option value="">-- Select --</option>
-        <option value="user">User Registration</option>
-        <option value="admin">Admin Registration</option>
-      </select>
-      <p id="dropdownError" class="error">Failed to load dropdown data. Using fallback data.</p>
+    <div class="main-content">
+      <div class="panel">
+        <div id="registerSection" class="section">
+          <h2 id="registerHeading">Registration</h2>
+          <select id="registerType" onchange="toggleRegisterForm()">
+            <option value="">-- Select --</option>
+            <option value="user">User Registration</option>
+            <option value="admin">Admin Registration</option>
+          </select>
+          <p id="dropdownError" class="error">Failed to load dropdown data. Using fallback data.</p>
 
-      <form id="userRegisterForm" class="section" style="display: none;">
-        <h3>User Registration</h3>
-        <button type="button" onclick="document.getElementById('geoModal').style.display='block'">Set Location Manually</button>
-        <label for="userEmail">Email</label>
-        <input type="email" name="email" required>
-        <span class="error" id="userEmailError">Please enter a valid email</span>
+          <form id="userRegisterForm" class="section" style="display: none;">
+            <h3>User Registration</h3>
+            <button type="button" onclick="document.getElementById('geoModal').style.display='block'">Set Location Manually</button>
+            <label for="userEmail">Email</label>
+            <input type="email" name="email" required>
+            <span class="error" id="userEmailError">Please enter a valid email</span>
 
-        <label for="userUsername">Username</label>
-        <input type="text" name="username" required>
+            <label for="userUsername">Username</label>
+            <input type="text" name="username" required>
 
-        <label for="userFirstName">First Name</label>
-        <input type="text" name="first_name" required>
+            <label for="userFirstName">First Name</label>
+            <input type="text" name="first_name" required>
 
-        <label for="userLastName">Last Name</label>
-        <input type="text" name="last_name" required>
+            <label for="userLastName">Last Name</label>
+            <input type="text" name="last_name" required>
 
-        <label for="userDrivingLicense">Driving License</label>
-        <input type="text" name="driving_license">
+            <label for="userDrivingLicense">Driving License</label>
+            <input type="text" name="driving_license">
 
-        <label for="userNationalId">National ID</label>
-        <input type="text" name="national_id">
+            <label for="userNationalId">National ID</label>
+            <input type="text" name="national_id">
 
-        <label for="userNumberPlate">Number Plate</label>
-        <input type="text" name="number_plate">
+            <label for="userNumberPlate">Number Plate</label>
+            <input type="text" name="number_plate">
 
-        <label for="userAddress">Address</label>
-        <input type="text" name="address">
+            <label for="userAddress">Address</label>
+            <input type="text" name="address">
 
-        <label for="userLocation">Location</label>
-        <input type="text" name="location">
+            <label for="userLocation">Location</label>
+            <input type="text" name="location">
 
-        <label for="userLatitude">Latitude</label>
-        <input type="text" name="latitude">
+            <label for="userLatitude">Latitude</label>
+            <input type="text" name="latitude">
 
-        <label for="userLongitude">Longitude</label>
-        <input type="text" name="longitude">
+            <label for="userLongitude">Longitude</label>
+            <input type="text" name="longitude">
 
-        <label for="userPassword">Password</label>
-        <input type="password" name="password" required minlength="8">
-        <span class="error" id="userPasswordError">Password must be at least 8 characters</span>
+            <label for="userPassword">Password</label>
+            <input type="password" name="password" required minlength="8">
+            <span class="error" id="userPasswordError">Password must be at least 8 characters</span>
 
-        <label for="userConfirmPassword">Confirm Password</label>
-        <input type="password" name="confirm_password" required minlength="8">
-        <span class="error" id="userConfirmPasswordError">Passwords do not match</span>
+            <label for="userConfirmPassword">Confirm Password</label>
+            <input type="password" name="confirm_password" required minlength="8">
+            <span class="error" id="userConfirmPasswordError">Passwords do not match</span>
 
-        <label for="userCountry">Country</label>
-        <select name="country" required>
-          <option value="">Select Country</option>
-        </select>
+            <label for="userCountry">Country</label>
+            <select name="country" required>
+              <option value="">Select Country</option>
+            </select>
 
-        <label for="userEmergencyContact">Emergency Contact</label>
-        <input type="text" name="emergency_contact_number">
+            <label for="userEmergencyContact">Emergency Contact</label>
+            <input type="text" name="emergency_contact_number">
 
-        <label for="userRelatedEmergencyContact">Related Emergency Contact</label>
-        <input type="text" name="emergency_contact_number_of_a_related_person">
+            <label for="userRelatedEmergencyContact">Related Emergency Contact</label>
+            <input type="text" name="emergency_contact_number_of_a_related_person">
 
-        <button type="submit">Register</button>
-        <span class="error" id="userRegisterError"></span>
-        <a href="#" onclick="showSection('loginSection')">Already registered? Login</a>
-      </form>
+            <button type="submit">Register</button>
+            <span class="error" id="userRegisterError"></span>
+            <a href="#" onclick="showSection('loginSection')">Already registered? Login</a>
+          </form>
 
-      <form id="adminRegisterForm" class="section" style="display: none;">
-        <h3>Admin Registration</h3>
-        <button type="button" onclick="document.getElementById('geoModal').style.display='block'">Set Location Manually</button>
-        <label for="adminEmail">Email</label>
-        <input type="email" name="email" required>
-        <span class="error" id="adminEmailError">Please enter a valid email</span>
+          <form id="adminRegisterForm" class="section" style="display: none;">
+            <h3>Admin Registration</h3>
+            <button type="button" onclick="document.getElementById('geoModal').style.display='block'">Set Location Manually</button>
+            <label for="adminEmail">Email</label>
+            <input type="email" name="email" required>
+            <span class="error" id="adminEmailError">Please enter a valid email</span>
 
-        <label for="adminUsername">Username</label>
-        <input type="text" name="username" required>
+            <label for="adminUsername">Username</label>
+            <input type="text" name="username" required>
 
-        <label for="adminType">Admin Type</label>
-        <select name="admin_type" required>
-          <option value="">Select Type</option>
-        </select>
+            <label for="adminType">Admin Type</label>
+            <select name="admin_type" required>
+              <option value="">Select Type</option>
+            </select>
 
-        <label for="adminCountry">Country</label>
-        <select name="country" required>
-          <option value="">Select Country</option>
-        </select>
+            <label for="adminCountry">Country</label>
+            <select name="country" required>
+              <option value="">Select Country</option>
+            </select>
 
-        <label for="adminThana">Thana</label>
-        <select name="thana" required>
-          <option value="">Select Thana</option>
-        </select>
+            <label for="adminThana">Thana</label>
+            <select name="thana" required>
+              <option value="">Select Thana</option>
+            </select>
 
-        <label for="adminEmergencyResponse">Emergency Response</label>
-        <input type="text" name="emergency_response">
+            <label for="adminEmergencyResponse">Emergency Response</label>
+            <input type="text" name="emergency_response">
 
-        <label for="adminServiceInfo">Service Info</label>
-        <input type="text" name="service_info">
+            <label for="adminServiceInfo">Service Info</label>
+            <input type="text" name="service_info">
 
-        <label for="adminLatitude">Latitude</label>
-        <input type="text" name="latitude">
+            <label for="adminLatitude">Latitude</label>
+            <input type="text" name="latitude">
 
-        <label for="adminLongitude">Longitude</label>
-        <input type="text" name="longitude">
+            <label for="adminLongitude">Longitude</label>
+            <input type="text" name="longitude">
 
-        <label for="adminPassword">Password</label>
-        <input type="password" name="password" required minlength="8">
-        <span class="error" id="adminPasswordError">Password must be at least 8 characters</span>
+            <label for="adminPassword">Password</label>
+            <input type="password" name="password" required minlength="8">
+            <span class="error" id="adminPasswordError">Password must be at least 8 characters</span>
 
-        <label for="adminConfirmPassword">Confirm Password</label>
-        <input type="password" name="confirm_password" required minlength="8">
-        <span class="error" id="adminConfirmPasswordError">Passwords do not match</span>
+            <label for="adminConfirmPassword">Confirm Password</label>
+            <input type="password" name="confirm_password" required minlength="8">
+            <span class="error" id="adminConfirmPasswordError">Passwords do not match</span>
 
-        <button type="submit">Register</button>
-        <span class="error" id="adminRegisterError"></span>
-        <a href="#" onclick="showSection('loginSection')">Already registered? Login</a>
-      </form>
-    </div>
+            <button type="submit">Register</button>
+            <span class="error" id="adminRegisterError"></span>
+            <a href="#" onclick="showSection('loginSection')">Already registered? Login</a>
+          </form>
+        </div>
 
-    <div id="loginSection" class="section active">
-      <h2>Login</h2>
-      <select id="loginType" onchange="toggleLoginForm()">
-        <option value="">-- Select --</option>
-        <option value="user">User Login</option>
-        <option value="admin">Admin Login</option>
-      </select>
-      <p id="loginTypeError" class="error">Please select a login type.</p>
+        <div id="loginSection" class="section active">
+          <h2 id="loginHeading">Login</h2>
+          <select id="loginType" onchange="toggleLoginForm()">
+            <option value="">-- Select --</option>
+            <option value="user">User Login</option>
+            <option value="admin">Admin Login</option>
+          </select>
+          <p id="loginTypeError" class="error">Please select a login type.</p>
 
-      <form id="userLoginForm" class="section" style="display: none;">
-        <h3>User Login</h3>
-        <label for="userLoginEmail">Email</label>
-        <input type="email" name="email" required>
-        <span class="error" id="userLoginEmailError">Please enter a valid email</span>
+          <form id="userLoginForm" class="section" style="display: none;">
+            <h3>User Login</h3>
+            <label for="userLoginEmail">Email</label>
+            <input type="email" name="email" required>
+            <span class="error" id="userLoginEmailError">Please enter a valid email</span>
 
-        <label for="userLoginPassword">Password</label>
-        <input type="password" name="password" required minlength="8">
-        <span class="error" id="userLoginPasswordError">Password must be at least 8 characters</span>
+            <label for="userLoginPassword">Password</label>
+            <input type="password" name="password" required minlength="8">
+            <span class="error" id="userLoginPasswordError">Password must be at least 8 characters</span>
 
-        <button type="submit">Login</button>
-        <span class="error" id="userLoginError"></span>
-        <a href="#" onclick="showSection('registerSection')">Not registered? Register</a>
-      </form>
+            <button type="submit">Login</button>
+            <span class="error" id="userLoginError"></span>
+            <a href="#" onclick="showSection('registerSection')">Not registered? Register</a>
+          </form>
 
-      <form id="adminLoginForm" class="section" style="display: none;">
-        <h3>Admin Login</h3>
-        <label for="adminLoginEmail">Email</label>
-        <input type="email" name="email" required>
-        <span class="error" id="adminLoginEmailError">Please enter a valid email</span>
+          <form id="adminLoginForm" class="section" style="display: none;">
+            <h3>Admin Login</h3>
+            <label for="adminLoginEmail">Email</label>
+            <input type="email" name="email" required>
+            <span class="error" id="adminLoginEmailError">Please enter a valid email</span>
 
-        <label for="adminLoginPassword">Password</label>
-        <input type="password" name="password" required minlength="8">
-        <span class="error" id="adminLoginPasswordError">Password must be at least 8 characters</span>
+            <label for="adminLoginPassword">Password</label>
+            <input type="password" name="password" required minlength="8">
+            <span class="error" id="adminLoginPasswordError">Password must be at least 8 characters</span>
 
-        <label for="adminLoginType">Admin Type</label>
-        <select name="admin_type" required>
-          <option value="">Select Admin Type</option>
-        </select>
+            <label for="adminLoginType">Admin Type</label>
+            <select name="admin_type" required>
+              <option value="">Select Admin Type</option>
+            </select>
 
-        <button type="submit">Login</button>
-        <span class="error" id="adminLoginError"></span>
-        <a href="#" onclick="showSection('registerSection')">Not registered? Register</a>
-      </form>
-    </div>
+            <button type="submit">Login</button>
+            <span class="error" id="adminLoginError"></span>
+            <a href="#" onclick="showSection('registerSection')">Not registered? Register</a>
+          </form>
+        </div>
 
-    <div id="userPanel" class="section">
-      <h2>User Panel</h2>
-      <div id="userData">
-        <p><strong>Email:</strong> <span id="userEmailDisplay"></span></p>
-        <p><strong>Username:</strong> <span id="userUsernameDisplay"></span></p>
-        <p><strong>First Name:</strong> <span id="userFirstNameDisplay"></span></p>
-        <p><strong>Last Name:</strong> <span id="userLastNameDisplay"></span></p>
-        <p><strong>Driving License:</strong> <span id="userDrivingLicenseDisplay"></span></p>
-        <p><strong>National ID:</strong> <span id="userNationalIdDisplay"></span></p>
-        <p><strong>Number Plate:</strong> <span id="userNumberPlateDisplay"></span></p>
-        <p><strong>Address:</strong> <span id="userAddressDisplay"></span></p>
-        <p><strong>Location:</strong> <span id="userLocationDisplay"></span></p>
-        <p><strong>Country:</strong> <span id="userCountryDisplay"></span></p>
-        <p><strong>Emergency Contact:</strong> <span id="userEmergencyContactDisplay"></span></p>
-        <p><strong>Related Emergency Contact:</strong> <span id="userRelatedEmergencyContactDisplay"></span></p>
-        <p><strong>Latitude:</strong> <span id="userLatitudeDisplay"></span></p>
-        <p><strong>Longitude:</strong> <span id="userLongitudeDisplay"></span></p>
+        <div id="userPanel" class="section">
+          <h2>R3sQ</h2>
+          <div id="userData">
+            <p><strong>Email:</strong> <span id="userEmailDisplay"></span></p>
+            <p><strong>Username:</strong> <span id="userUsernameDisplay"></span></p>
+            <p><strong>First Name:</strong> <span id="userFirstNameDisplay"></span></p>
+            <p><strong>Last Name:</strong> <span id="userLastNameDisplay"></span></p>
+            <p><strong>Driving License:</strong> <span id="userDrivingLicenseDisplay"></span></p>
+            <p><strong>National ID:</strong> <span id="userNationalIdDisplay"></span></p>
+            <p><strong>Number Plate:</strong> <span id="userNumberPlateDisplay"></span></p>
+            <p><strong>Address:</strong> <span id="userAddressDisplay"></span></p>
+            <p><strong>Location:</strong> <span id="userLocationDisplay"></span></p>
+            <p><strong>Country:</strong> <span id="userCountryDisplay"></span></p>
+            <p><strong>Emergency Contact:</strong> <span id="userEmergencyContactDisplay"></span></p>
+            <p><strong>Related Emergency Contact:</strong> <span id="userRelatedEmergencyContactDisplay"></span></p>
+            <p><strong>Latitude:</strong> <span id="userLatitudeDisplay"></span></p>
+            <p><strong>Longitude:</strong> <span id="userLongitudeDisplay"></span></p>
+          </div>
+
+          <h3>Change Password</h3>
+          <form id="userChangePasswordForm">
+            <label for="userNewPassword">New Password</label>
+            <input type="password" name="newPassword" required minlength="8">
+            <span class="error" id="userChangePasswordError">Password must be at least 8 characters</span>
+            <button type="submit">Change Password</button>
+            <span class="error" id="userChangePasswordResult"></span>
+          </form>
+
+          <h3>Upload Profile Image</h3>
+          <form id="userUploadImageForm" enctype="multipart/form-data">
+            <input type="file" name="image" accept="image/*">
+            <button type="submit">Upload Image</button>
+            <span class="error" id="userUploadImageError"></span>
+          </form>
+
+          <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+
+        <div id="adminPanel" class="section">
+          <h2>R3sQ</h2>
+          <div id="adminData">
+            <p><strong>Email:</strong> <span id="adminEmailDisplay"></span></p>
+            <p><strong>Username:</strong> <span id="adminUsernameDisplay"></span></p>
+            <p><strong>Admin Type:</strong> <span id="adminTypeDisplay"></span></p>
+            <p><strong>Country:</strong> <span id="adminCountryDisplay"></span></p>
+            <p><strong>Thana:</strong> <span id="adminThanaDisplay"></span></p>
+            <p><strong>Emergency Response:</strong> <span id="adminEmergencyResponseDisplay"></span></p>
+            <p><strong>Service Info:</strong> <span id="adminServiceInfoDisplay"></span></p>
+            <p><strong>Latitude:</strong> <span id="adminLatitudeDisplay"></span></p>
+            <p><strong>Longitude:</strong> <span id="adminLongitudeDisplay"></span></p>
+          </div>
+
+          <h3>Change Password</h3>
+          <form id="adminChangePasswordForm">
+            <label for="adminNewPassword">New Password</label>
+            <input type="password" name="newPassword" required minlength="8">
+            <span class="error" id="adminChangePasswordError">Password must be at least 8 characters</span>
+            <button type="submit">Change Password</button>
+            <span class="error" id="adminChangePasswordResult"></span>
+          </form>
+
+          <h3>Upload Profile Image</h3>
+          <form id="adminUploadImageForm" enctype="multipart/form-data">
+            <input type="file" name="image" accept="image/*">
+            <button type="submit">Upload Image</button>
+            <span class="error" id="adminUploadImageError"></span>
+          </form>
+
+          <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
       </div>
-
-      <h3>Change Password</h3>
-      <form id="userChangePasswordForm">
-        <label for="userNewPassword">New Password</label>
-        <input type="password" name="newPassword" required minlength="8">
-        <span class="error" id="userChangePasswordError">Password must be at least 8 characters</span>
-        <button type="submit">Change Password</button>
-        <span class="error" id="userChangePasswordResult"></span>
-      </form>
-
-      <h3>Upload Profile Image</h3>
-      <form id="userUploadImageForm" enctype="multipart/form-data">
-        <input type="file" name="image" accept="image/*">
-        <button type="submit">Upload Image</button>
-        <span class="error" id="userUploadImageError"></span>
-      </form>
-    </div>
-
-    <div id="adminPanel" class="section">
-      <h2>Admin Panel</h2>
-      <div id="adminData">
-        <p><strong>Email:</strong> <span id="adminEmailDisplay"></span></p>
-        <p><strong>Username:</strong> <span id="adminUsernameDisplay"></span></p>
-        <p><strong>Admin Type:</strong> <span id="adminTypeDisplay"></span></p>
-        <p><strong>Country:</strong> <span id="adminCountryDisplay"></span></p>
-        <p><strong>Thana:</strong> <span id="adminThanaDisplay"></span></p>
-        <p><strong>Emergency Response:</strong> <span id="adminEmergencyResponseDisplay"></span></p>
-        <p><strong>Service Info:</strong> <span id="adminServiceInfoDisplay"></span></p>
-        <p><strong>Latitude:</strong> <span id="adminLatitudeDisplay"></span></p>
-        <p><strong>Longitude:</strong> <span id="adminLongitudeDisplay"></span></p>
-      </div>
-
-      <h3>Change Password</h3>
-      <form id="adminChangePasswordForm">
-        <label for="adminNewPassword">New Password</label>
-        <input type="password" name="newPassword" required minlength="8">
-        <span class="error" id="adminChangePasswordError">Password must be at least 8 characters</span>
-        <button type="submit">Change Password</button>
-        <span class="error" id="adminChangePasswordResult"></span>
-      </form>
-
-      <h3>Upload Profile Image</h3>
-      <form id="adminUploadImageForm" enctype="multipart/form-data">
-        <input type="file" name="image" accept="image/*">
-        <button type="submit">Upload Image</button>
-        <span class="error" id="adminUploadImageError"></span>
-      </form>
-
-      <h3>Notifications and Alerts</h3>
-      <div id="adminNotifications">
-        <p><em>No emergency messages at the moment.</em></p>
+      <div class="notifications-box">
+        <h3>Notifications and Alerts</h3>
+        <div id="adminNotifications">
+          <p><em>Nothing to show</em></p>
+        </div>
       </div>
     </div>
-
-    <footer>© 2025 RegistrationSystem. All rights reserved.</footer>
+    <footer>© 2025 R3sQ. All rights reserved.</footer>
   </div>
 
   <div id="geoModal" class="section" style="display: none;">
@@ -461,17 +513,39 @@
     // Set your backend URL
     const backendUrl = 'https://fedup-1buq.onrender.com';
 
-    // Show/hide sections
+    // Show/hide sections and update titles
     function showSection(sectionId) {
       document.querySelectorAll('.section').forEach(section => {
         section.classList.remove('active');
       });
       document.getElementById(sectionId).classList.add('active');
+      // Update page title and heading based on section
+      if (sectionId === 'registerSection') {
+        document.getElementById('pageTitle').textContent = 'Registration';
+        document.getElementById('registerHeading').textContent = 'Registration';
+      } else if (sectionId === 'loginSection') {
+        document.getElementById('pageTitle').textContent = 'Login';
+        document.getElementById('loginHeading').textContent = 'Login';
+      } else if (sectionId === 'userPanel') {
+        document.getElementById('pageTitle').textContent = 'R3sQ - User Panel';
+        document.querySelector('#userPanel h2').textContent = 'R3sQ';
+      } else if (sectionId === 'adminPanel') {
+        document.getElementById('pageTitle').textContent = 'R3sQ - Admin Panel';
+        document.querySelector('#adminPanel h2').textContent = 'R3sQ';
+      }
       // Show geolocation modal only when on registration section
       if (sectionId === 'registerSection' && navigator.geolocation) {
         document.getElementById('geoModal').style.display = 'block';
       } else {
         document.getElementById('geoModal').style.display = 'none';
+      }
+      // Hide notifications box for non-admin sections
+      const notificationsBox = document.querySelector('.notifications-box');
+      if (sectionId !== 'adminPanel') {
+        notificationsBox.style.display = 'none';
+      } else {
+        notificationsBox.style.display = 'block';
+        fetchEmergencyMessages(); // Fetch notifications when entering adminPanel
       }
     }
 
@@ -815,15 +889,15 @@
               notificationsDiv.appendChild(p);
             });
           } else {
-            notificationsDiv.innerHTML = '<p><em>No emergency messages at the moment.</em></p>';
+            notificationsDiv.innerHTML = '<p><em>Nothing to show</em></p>';
           }
         } else {
           console.error('Failed to fetch emergency messages:', await response.text());
-          document.getElementById('adminNotifications').innerHTML = '<p><em>Failed to load notifications.</em></p>';
+          document.getElementById('adminNotifications').innerHTML = '<p><em>Nothing to show</em></p>';
         }
       } catch (err) {
         console.error('Error fetching emergency messages:', err.message);
-        document.getElementById('adminNotifications').innerHTML = '<p><em>Failed to load notifications.</em></p>';
+        document.getElementById('adminNotifications').innerHTML = '<p><em>Nothing to show</em></p>';
       }
     }
 
@@ -961,6 +1035,16 @@
         errorElement.style.display = 'block';
       }
     });
+
+    // Logout Function
+    function logout() {
+      showSection('loginSection');
+      document.getElementById('userLoginError').style.display = 'none';
+      document.getElementById('adminLoginError').style.display = 'none';
+      document.getElementById('userData').innerHTML = '';
+      document.getElementById('adminData').innerHTML = '';
+      document.getElementById('adminNotifications').innerHTML = '<p><em>Nothing to show</em></p>';
+    }
 
     // Geolocation Handling
     function allowGeo() {
