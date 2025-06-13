@@ -156,41 +156,6 @@
     #geoModal button {
       margin: 10px;
     }
-    #adminPanel {
-      background-color: #2c2f33;
-      color: #e0e0e0;
-      padding: 20px;
-      border-radius: 12px;
-    }
-    .deck {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-    .card {
-      background-color: #40444b;
-      padding: 15px;
-      border-radius: 12px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    }
-    .card h3 {
-      color: #e0e0e0;
-    }
-    .card p {
-      margin: 10px 0;
-    }
-    .card form {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .card input, .card button {
-      background-color: #ffffff;
-      color: #333;
-    }
-    .card button:hover {
-      background-color: #1557b0;
-    }
     @media (max-width: 600px) {
       .container {
         padding: 24px;
@@ -371,7 +336,6 @@
 
     <div id="userPanel" class="section">
       <h2>User Panel</h2>
-      <button onclick="logout()">Logout</button>
       <div id="userData">
         <p><strong>Email:</strong> <span id="userEmailDisplay"></span></p>
         <p><strong>Username:</strong> <span id="userUsernameDisplay"></span></p>
@@ -408,40 +372,37 @@
 
     <div id="adminPanel" class="section">
       <h2>Admin Panel</h2>
-      <button onclick="logout()">Logout</button>
-      <div class="deck">
-        <div class="card" id="adminData">
-          <h3>Admin Information</h3>
-          <p><strong>Email:</strong> <span id="adminEmailDisplay"></span></p>
-          <p><strong>Username:</strong> <span id="adminUsernameDisplay"></span></p>
-          <p><strong>Admin Type:</strong> <span id="adminTypeDisplay"></span></p>
-          <p><strong>Country:</strong> <span id="adminCountryDisplay"></span></p>
-          <p><strong>Thana:</strong> <span id="adminThanaDisplay"></span></p>
-          <p><strong>Emergency Response:</strong> <span id="adminEmergencyResponseDisplay"></span></p>
-          <p><strong>Service Info:</strong> <span id="adminServiceInfoDisplay"></span></p>
-          <p><strong>Latitude:</strong> <span id="adminLatitudeDisplay"></span></p>
-          <p><strong>Longitude:</strong> <span id="adminLongitudeDisplay"></span></p>
-        </div>
+      <div id="adminData">
+        <p><strong>Email:</strong> <span id="adminEmailDisplay"></span></p>
+        <p><strong>Username:</strong> <span id="adminUsernameDisplay"></span></p>
+        <p><strong>Admin Type:</strong> <span id="adminTypeDisplay"></span></p>
+        <p><strong>Country:</strong> <span id="adminCountryDisplay"></span></p>
+        <p><strong>Thana:</strong> <span id="adminThanaDisplay"></span></p>
+        <p><strong>Emergency Response:</strong> <span id="adminEmergencyResponseDisplay"></span></p>
+        <p><strong>Service Info:</strong> <span id="adminServiceInfoDisplay"></span></p>
+        <p><strong>Latitude:</strong> <span id="adminLatitudeDisplay"></span></p>
+        <p><strong>Longitude:</strong> <span id="adminLongitudeDisplay"></span></p>
+      </div>
 
-        <div class="card">
-          <h3>Change Password</h3>
-          <form id="adminChangePasswordForm">
-            <label for="adminNewPassword">New Password</label>
-            <input type="password" name="newPassword" required minlength="8">
-            <span class="error" id="adminChangePasswordError">Password must be at least 8 characters</span>
-            <button type="submit">Change Password</button>
-            <span class="error" id="adminChangePasswordResult"></span>
-          </form>
-        </div>
+      <h3>Change Password</h3>
+      <form id="adminChangePasswordForm">
+        <label for="adminNewPassword">New Password</label>
+        <input type="password" name="newPassword" required minlength="8">
+        <span class="error" id="adminChangePasswordError">Password must be at least 8 characters</span>
+        <button type="submit">Change Password</button>
+        <span class="error" id="adminChangePasswordResult"></span>
+      </form>
 
-        <div class="card">
-          <h3>Upload Profile Image</h3>
-          <form id="adminUploadImageForm" enctype="multipart/form-data">
-            <input type="file" name="image" accept="image/*">
-            <button type="submit">Upload Image</button>
-            <span class="error" id="adminUploadImageError"></span>
-          </form>
-        </div>
+      <h3>Upload Profile Image</h3>
+      <form id="adminUploadImageForm" enctype="multipart/form-data">
+        <input type="file" name="image" accept="image/*">
+        <button type="submit">Upload Image</button>
+        <span class="error" id="adminUploadImageError"></span>
+      </form>
+
+      <h3>Notifications and Alerts</h3>
+      <div id="adminNotifications">
+        <p><em>No emergency messages at the moment.</em></p>
       </div>
     </div>
 
@@ -764,6 +725,7 @@
           errorElement.style.display = 'block';
           fetchAdminData(data.email, data.admin_type);
           showSection('adminPanel');
+          fetchEmergencyMessages(); // Fetch notifications after login
         } else {
           errorElement.textContent = result || `Error logging in: HTTP ${response.status}`;
           errorElement.style.display = 'block';
@@ -800,10 +762,10 @@
           document.getElementById('userLatitudeDisplay').textContent = user.latitude || '';
           document.getElementById('userLongitudeDisplay').textContent = user.longitude || '';
         } else {
-          console.error('Error fetching user data:', await response.text());
+          console.error('Failed to fetch user data:', await response.text());
         }
       } catch (err) {
-        console.error('Error during fetchUserData:', err);
+        console.error('Error fetching user data:', err.message);
       }
     }
 
@@ -827,12 +789,46 @@
           document.getElementById('adminLatitudeDisplay').textContent = admin.latitude || '';
           document.getElementById('adminLongitudeDisplay').textContent = admin.longitude || '';
         } else {
-          console.error('Error fetching admin data:', await response.text());
+          console.error('Failed to fetch admin data:', await response.text());
         }
       } catch (err) {
-        console.error('Error during fetchAdminData:', err);
+        console.error('Error fetching admin data:', err.message);
       }
     }
+
+    // Fetch Emergency Messages
+    async function fetchEmergencyMessages() {
+      try {
+        const response = await fetch(`${backendUrl}/get-emergency-messages`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        if (response.ok) {
+          const messages = await response.json();
+          const notificationsDiv = document.getElementById('adminNotifications');
+          notificationsDiv.innerHTML = ''; // Clear existing messages
+          if (messages.length > 0) {
+            messages.forEach(message => {
+              const p = document.createElement('p');
+              p.textContent = message.text || 'No message content';
+              p.style.color = '#d93025'; // Red for urgency
+              notificationsDiv.appendChild(p);
+            });
+          } else {
+            notificationsDiv.innerHTML = '<p><em>No emergency messages at the moment.</em></p>';
+          }
+        } else {
+          console.error('Failed to fetch emergency messages:', await response.text());
+          document.getElementById('adminNotifications').innerHTML = '<p><em>Failed to load notifications.</em></p>';
+        }
+      } catch (err) {
+        console.error('Error fetching emergency messages:', err.message);
+        document.getElementById('adminNotifications').innerHTML = '<p><em>Failed to load notifications.</em></p>';
+      }
+    }
+
+    // Poll for new messages every 30 seconds
+    setInterval(fetchEmergencyMessages, 30000);
 
     // Handle User Change Password
     document.getElementById('userChangePasswordForm')?.addEventListener('submit', async (e) => {
@@ -864,7 +860,7 @@
           errorElement.style.display = 'block';
         }
       } catch (err) {
-        console.error('Error during password change:', err.message);
+        console.error('Error changing user password:', err.message);
         errorElement.textContent = `Failed to connect to the server: ${err.message}. Please try again.`;
         errorElement.style.display = 'block';
       }
@@ -901,7 +897,7 @@
           errorElement.style.display = 'block';
         }
       } catch (err) {
-        console.error('Error during password change:', err.message);
+        console.error('Error changing admin password:', err.message);
         errorElement.textContent = `Failed to connect to the server: ${err.message}. Please try again.`;
         errorElement.style.display = 'block';
       }
@@ -930,7 +926,7 @@
           errorElement.style.display = 'block';
         }
       } catch (err) {
-        console.error('Error during image upload:', err.message);
+        console.error('Error uploading user image:', err.message);
         errorElement.textContent = `Failed to connect to the server: ${err.message}. Please try again.`;
         errorElement.style.display = 'block';
       }
@@ -960,33 +956,27 @@
           errorElement.style.display = 'block';
         }
       } catch (err) {
-        console.error('Error during image upload:', err.message);
+        console.error('Error uploading admin image:', err.message);
         errorElement.textContent = `Failed to connect to the server: ${err.message}. Please try again.`;
         errorElement.style.display = 'block';
       }
     });
 
-    // Handle Logout
-    function logout() {
-      // Clear any stored data (e.g., session or localStorage if implemented)
-      localStorage.removeItem('userEmail'); // Example; adjust based on your implementation
-      // Redirect to login section
-      showSection('loginSection');
-    }
-
-    // Geolocation handling
+    // Geolocation Handling
     function allowGeo() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
-            const { latitude, longitude } = position.coords;
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
             document.querySelectorAll('input[name="latitude"]').forEach(input => input.value = latitude);
             document.querySelectorAll('input[name="longitude"]').forEach(input => input.value = longitude);
             document.getElementById('geoModal').style.display = 'none';
           },
           (error) => {
-            console.error('Geolocation error:', error);
+            console.error('Geolocation error:', error.message);
             document.getElementById('geoModal').style.display = 'none';
+            alert('Unable to retrieve your location. Please enter manually.');
           }
         );
       } else {
@@ -995,11 +985,10 @@
       }
     }
 
-    // Initialize
+    // Load dropdowns and initial state
     document.addEventListener('DOMContentLoaded', () => {
       loadDropdowns();
-      toggleRegisterForm();
-      toggleLoginForm();
+      toggleLoginForm(); // Ensure login form is initialized
     });
   </script>
 </body>

@@ -289,5 +289,21 @@ app.post('/upload-image-admin', upload.single('image'), async (req, res) => {
 // Serve uploaded images
 app.use('/uploads', express.static('uploads'));
 
+// Get Emergency Messages
+app.get('/get-emergency-messages', (req, res) => {
+  console.log('GET /get-emergency-messages');
+  try {
+    // Sample emergency messages (replace with your data source, e.g., MongoDB)
+    const emergencyMessages = [
+      { text: 'Emergency: Flood alert in Dhaka at 03:40 PM, June 13, 2025' },
+      { text: 'Alert: Road closure on Main Street due to accident' }
+    ];
+    res.status(200).json(emergencyMessages);
+  } catch (err) {
+    console.error('Error fetching emergency messages:', err);
+    res.status(500).send('Error fetching emergency messages');
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
